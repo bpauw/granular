@@ -1,0 +1,41 @@
+[project]
+name = "granular"
+version = "0.1.0-alpha"
+description = "organizational management in the cli"
+readme = "README.md"
+requires-python = "~=3.14.0"
+dependencies = [
+    "icalevents==0.3.1",
+    "pendulum==3.1.0",
+    "platformdirs==4.5.0",
+    "pyyaml==6.0.3",
+    "rich==14.2.0",
+    "typer==0.20.0",
+]
+classifiers = [
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python",
+    "Typing :: Typed",
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.14",
+]
+
+[project.scripts]
+gran = "granular:main"
+
+[build-system]
+requires = ["uv_build>=0.8.22,<0.9.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyinstaller==6.16.0",
+    "ruff==0.14.4",
+    "types-pyyaml==6.0.12.20250915",
+    "ty==0.0.7"
+]
