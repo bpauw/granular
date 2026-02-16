@@ -224,6 +224,7 @@ class CalWeekParams(TerminalViewParams):
 
 
 class CalDaysParams(TerminalViewParams):
+    start_date: NotRequired[Optional[str]]
     num_days: NotRequired[int]
     day_width: NotRequired[int]
     granularity: NotRequired[int]

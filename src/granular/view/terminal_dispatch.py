@@ -212,6 +212,9 @@ def dispatch(view_type: TerminalView, view_params: TerminalViewParams) -> None:
         case TerminalView.CAL_DAYS:
             params = cast(CalDaysParams, view_params)
             terminal_view.cal_days(
+                start_date=datetime_from_local_date_str_optional(
+                    params.get("start_date")
+                ),
                 num_days=params.get("num_days", 7),
                 day_width=params.get("day_width", 30),
                 granularity=params.get("granularity", 60),

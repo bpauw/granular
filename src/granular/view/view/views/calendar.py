@@ -175,6 +175,7 @@ def calendar_days_view(
     time_audits: list[TimeAudit],
     events: list[Event],
     tasks: list[Task],
+    start_date: Optional[pendulum.DateTime] = None,
     num_days: int = 7,
     day_width: int = 30,
     granularity: int = 60,
@@ -190,7 +191,7 @@ def calendar_days_view(
     show_trackers: bool = False,
 ) -> None:
     """
-    Display a multi-day calendar starting from today showing time audits and events horizontally across days.
+    Display a multi-day calendar showing time audits and events horizontally across days.
 
     Args:
         active_context: The name of the active context
@@ -198,6 +199,7 @@ def calendar_days_view(
         time_audits: List of time audits to display
         events: List of events to display
         tasks: List of tasks to display
+        start_date: Optional start date (defaults to today in local timezone)
         num_days: Number of days to display (defaults to 7)
         day_width: Width of each day column in characters (defaults to 30)
         granularity: Time interval in minutes (60, 30, or 15)
@@ -216,8 +218,11 @@ def calendar_days_view(
 
     console = Console()
 
-    # Start from today (current date at beginning of day)
-    start_date = pendulum.now("local").start_of("day")
+    # Use provided start_date or default to today
+    if start_date is None:
+        start_date = pendulum.now("local").start_of("day")
+    else:
+        start_date = start_date.in_tz("local").start_of("day")
 
     # Generate day columns
     day_columns: list[RenderableType] = []

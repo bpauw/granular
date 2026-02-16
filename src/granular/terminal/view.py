@@ -1940,6 +1940,15 @@ def cal_week(
 
 @app.command("cal-days, cds")
 def cal_days(
+    start_date: Annotated[
+        Optional[pendulum.DateTime],
+        typer.Option(
+            "--start-date",
+            "-sd",
+            parser=parse_datetime,
+            help="valid inputs: YYYY-MM-DD, today, yesterday, tomorrow, or day offset like 1, -1",
+        ),
+    ] = None,
     num_days: Annotated[
         int,
         typer.Option(
@@ -2100,6 +2109,7 @@ def cal_days(
 
     # Cache terminal-level parameters for replay
     terminal_params: CalDaysParams = {
+        "start_date": datetime_to_local_date_str_optional(start_date),
         "num_days": num_days,
         "day_width": day_width,
         "granularity": granularity,
@@ -2120,6 +2130,7 @@ def cal_days(
         time_audits,
         events,
         tasks,
+        start_date,
         effective_days,
         day_width,
         granularity,

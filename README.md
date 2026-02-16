@@ -475,7 +475,7 @@ All view commands are under `gran view` (alias: `gran v`). Most list views suppo
 |---|---|---|
 | `gran view cal-day` | `gran v cd` | Single day calendar |
 | `gran view cal-week` | `gran v cw` | Multi-day horizontal calendar |
-| `gran view cal-days` | `gran v cds` | Multi-day calendar starting from today |
+| `gran view cal-days` | `gran v cds` | Multi-day calendar (defaults to starting from today) |
 | `gran view cal-month` | `gran v cm` | Monthly calendar grid |
 | `gran view cal-quarter` | `gran v cq` | Quarterly calendar (3 months) |
 
@@ -492,7 +492,29 @@ All view commands are under `gran view` (alias: `gran v`). Most list views suppo
 | `--show-time-audits/--no-show-time-audits` | | Show time audits (default: on) |
 | `--show-trackers/--no-show-trackers` | | Show tracker entries (default: off) |
 
-Week/multi-day views also support `--num-days`/`-n` and `--day-width`/`-w`.
+Week and multi-day views (`cal-week`, `cal-days`) also support:
+
+| Option | Short | Description |
+|---|---|---|
+| `--start-date` | `-sd` | Start date for the calendar (defaults to start of current week for `cal-week`, today for `cal-days`). Accepts the same [date input formats](#date-and-time-input): `YYYY-MM-DD`, `today`, `yesterday`, `tomorrow`, or a numeric day offset like `1` or `-3` |
+| `--num-days` | `-n` | Number of days to display (default: 7) |
+| `--day-width` | `-w` | Width of each day column in characters (default: 30) |
+
+**Examples:**
+
+```sh
+# Show a 7-day calendar starting from today (default)
+gran view cal-days
+
+# Show a 7-day calendar starting from a specific date
+gran view cal-days --start-date 2026-01-01
+
+# Show 14 days starting from 3 days ago
+gran view cal-days -sd -3 --num-days 14
+
+# Show a week starting from a specific date
+gran view cal-week --start-date 2026-03-01
+```
 
 ### Agenda
 
