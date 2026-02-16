@@ -4,6 +4,8 @@ Life management in the terminal.
 
 > **Alpha Software** — Granular is under active development. It contains bugs and there are planned breaking changes to the data format. Use with caution.
 
+> **Contributing** — Please note that this software is currently closed to anonymous outside code contributions.
+
 Granular is a CLI application for managing tasks, time tracking, events, timespans, notes, logs, and habit tracking — all from the terminal. Data is stored as plain YAML files on disk with optional git versioning for full change history.
 
 **Documentation:** https://granular.sh
