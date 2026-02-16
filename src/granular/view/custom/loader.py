@@ -17,17 +17,17 @@ from granular.model.custom_view import (
     Views,
 )
 from granular.model.terminal_dispatch import TerminalView
-from granular.terminal import view
+from granular.terminal import custom_view
 from granular.view.terminal_dispatch import dispatch
 
 
 def load_custom_views() -> None:
     views_data = cast(
-        Views, load(configuration.DATA_REPORTS_PATH.read_text(), Loader=Loader)
+        Views, load(configuration.DATA_CUSTOM_VIEWS_PATH.read_text(), Loader=Loader)
     )
 
-    for compound_view in views_data.get("views", []):
-        view.app.command(compound_view["name"], help="")(
+    for compound_view in views_data.get("custom_views", []):
+        custom_view.app.command(compound_view["name"], help="")(
             partial(
                 dispatch, TerminalView.CUSTOM_LOADER, {"compound_view": compound_view}
             )

@@ -75,10 +75,12 @@ def __ensure_data_files() -> None:
         configuration.DATA_EVENTS_PATH.touch()
         events: dict[str, Any] = {"next_id": 1, "events": []}
         configuration.DATA_EVENTS_PATH.write_text(dump(events, Dumper=Dumper))
-    if not configuration.DATA_REPORTS_PATH.is_file():
-        configuration.DATA_REPORTS_PATH.touch()
-        reports: dict[str, Any] = {"reports": []}
-        configuration.DATA_REPORTS_PATH.write_text(dump(reports, Dumper=Dumper))
+    if not configuration.DATA_CUSTOM_VIEWS_PATH.is_file():
+        configuration.DATA_CUSTOM_VIEWS_PATH.touch()
+        custom_views: dict[str, Any] = {"custom_views": []}
+        configuration.DATA_CUSTOM_VIEWS_PATH.write_text(
+            dump(custom_views, Dumper=Dumper)
+        )
     if not configuration.DATA_CONTEXT_PATH.is_file():
         configuration.DATA_CONTEXT_PATH.touch()
         contexts: dict[str, Any] = {

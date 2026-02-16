@@ -25,7 +25,7 @@ DATA_EVENTS_PATH: Path = DATA_PATH / "events.yaml"
 DATA_CONTEXT_PATH: Path = DATA_PATH / "contexts.yaml"
 DATA_TAGS_PATH: Path = DATA_PATH / "tags.yaml"
 DATA_PROJECTS_PATH: Path = DATA_PATH / "projects.yaml"
-DATA_REPORTS_PATH: Path = DATA_PATH / "reports.yaml"
+DATA_CUSTOM_VIEWS_PATH: Path = DATA_PATH / "custom-views.yaml"
 DATA_TIMESPANS_PATH: Path = DATA_PATH / "timespans.yaml"
 DATA_NOTES_PATH: Path = DATA_PATH / "notes.yaml"
 DATA_LOGS_PATH: Path = DATA_PATH / "logs.yaml"
@@ -76,7 +76,7 @@ def load_data_path_configuration() -> None:
         DATA_CONTEXT_PATH, \
         DATA_TAGS_PATH, \
         DATA_PROJECTS_PATH, \
-        DATA_REPORTS_PATH, \
+        DATA_CUSTOM_VIEWS_PATH, \
         DATA_TIMESPANS_PATH, \
         DATA_NOTES_PATH, \
         DATA_LOGS_PATH, \
@@ -104,7 +104,7 @@ def load_data_path_configuration() -> None:
         DATA_CONTEXT_PATH = DATA_PATH / "contexts.yaml"
         DATA_TAGS_PATH = DATA_PATH / "tags.yaml"
         DATA_PROJECTS_PATH = DATA_PATH / "projects.yaml"
-        DATA_REPORTS_PATH = DATA_PATH / "reports.yaml"
+        DATA_CUSTOM_VIEWS_PATH = DATA_PATH / "custom-views.yaml"
         DATA_TIMESPANS_PATH = DATA_PATH / "timespans.yaml"
         DATA_NOTES_PATH = DATA_PATH / "notes.yaml"
         DATA_LOGS_PATH = DATA_PATH / "logs.yaml"

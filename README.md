@@ -29,6 +29,7 @@ Granular is a CLI application for managing tasks, time tracking, events, timespa
   - [Trackers](#trackers)
   - [Contexts](#contexts-commands)
   - [Views](#views)
+  - [Custom Views Command](#custom-views-command)
   - [Search](#search)
   - [Configuration](#configuration-commands)
 - [Views Reference](#views-reference)
@@ -369,7 +370,7 @@ gran context activate <name>             # Activate a context
 
 ### Views
 
-See [Views Reference](#views-reference) for detailed documentation of all view commands.
+The `gran view` command group contains all built-in views. See [Views Reference](#views-reference) for detailed documentation.
 
 ```sh
 gran view tasks        # Task list
@@ -379,6 +380,22 @@ gran view cal-day      # Day calendar
 gran view gantt        # Gantt chart
 # ... and many more
 ```
+
+### Custom Views Command
+
+User-defined compound views have their own dedicated command group: `gran custom-view` (alias: `gran cv`). This keeps custom views separate from the built-in view commands.
+
+Any custom views defined in your `custom-views.yaml` data file are registered as subcommands under this group. For example, if you define a custom view named `dashboard`, you invoke it with:
+
+```sh
+gran custom-view dashboard
+# or using the alias:
+gran cv dashboard
+```
+
+Run `gran custom-view --help` (or `gran cv --help`) to see all available custom views.
+
+See [Custom Views](#custom-views) for details on how to define custom views in YAML.
 
 ### Search
 
@@ -616,12 +633,14 @@ gran view entries <tracker_id>   # List entries for a tracker
 
 ## Custom Views
 
-Custom views let you compose multiple sub-views into a single named command. Define them in `reports.yaml` in your data directory.
+Custom views let you compose multiple sub-views into a single named command. Define them in `custom-views.yaml` in your data directory under the `custom_views` key.
+
+> **Migration note:** If you are upgrading from a previous version that used `reports.yaml`, the file is automatically renamed to `custom-views.yaml` and the YAML key is updated to `custom_views` on first run. No manual action is required.
 
 ### Defining Custom Views
 
 ```yaml
-views:
+custom_views:
   - name: dashboard
     views:
       - view_type: header
@@ -655,7 +674,9 @@ views:
 Once defined, invoke with:
 
 ```sh
-gran view dashboard
+gran custom-view dashboard
+# or using the alias:
+gran cv dashboard
 ```
 
 ### Sub-View Types
@@ -931,6 +952,7 @@ Every command group and subcommand has a short alias for faster typing:
 | `log` | `l` |
 | `tracker` | `tr` |
 | `view` | `v` |
+| `custom-view` | `cv` |
 | `search` | `s` |
 | `version` | `ve` |
 
@@ -986,7 +1008,7 @@ All data is stored as plain YAML files on disk — no database is required. The 
 | `contexts.yaml` | All contexts |
 | `tags.yaml` | Tag index |
 | `projects.yaml` | Project index |
-| `reports.yaml` | Custom view definitions |
+| `custom-views.yaml` | Custom view definitions |
 | `id_map.yaml` | Synthetic-to-real ID mapping (session-specific) |
 | `migrate.yaml` | Migration version state |
 

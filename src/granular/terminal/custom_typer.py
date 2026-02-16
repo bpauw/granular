@@ -110,8 +110,10 @@ class ContextAwareTyperGroup(AliasedTyperGroup):
             "note, n",
             "log, l",
             "view, v",
+            "custom-view, cv",
             "search, s",
             "doc, d",
+            "version, ve",
         ]
 
         # Return commands in desired order, then any extras not in the list

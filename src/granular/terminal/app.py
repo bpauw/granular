@@ -8,6 +8,7 @@ from granular import state as app_state
 from granular.terminal import (
     configuration,
     context,
+    custom_view,
     event,
     log,
     note,
@@ -37,6 +38,7 @@ app.add_typer(note.app, name="note, n")
 app.add_typer(log.app, name="log, l")
 app.add_typer(tracker.app, name="tracker, tr")
 app.add_typer(view.app, name="view, v")
+app.add_typer(custom_view.app, name="custom-view, cv")
 # app.add_typer(doc.app, name="doc, d")
 app.command(name="search, s")(search)
 app.command(name="version, ve")(version)

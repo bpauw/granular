@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 0.3.0
+
+### New
+
+- Added `gran custom-view` (alias `gran cv`) top-level command group for user-defined compound views, separating them from the built-in `gran view` commands
+- Added data migration to automatically rename `reports.yaml` to `custom-views.yaml` and update the YAML key for existing users
+
+### Updated
+
+- Custom views are now defined under the `custom_views` key in `custom-views.yaml` (previously `views` or `reports` key in `reports.yaml`)
+- The `gran --help` output now lists `custom-view, cv` after `view, v` and includes the previously missing `version, ve` entry
+
 ## Version 0.2.0
 
 ### New

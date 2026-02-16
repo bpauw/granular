@@ -22,7 +22,7 @@ ViewType = Literal[
 
 
 class Views(TypedDict):
-    views: list["CompoundView"]
+    custom_views: list["CompoundView"]
 
 
 class TaskSubView(TypedDict):
