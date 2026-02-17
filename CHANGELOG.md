@@ -1,6 +1,6 @@
 # Changelog
 
-## Version 0.4.0
+## Version 0.4.0-alpha
 
 ### New
 
@@ -21,7 +21,7 @@
 
 - Type annotations across the view and terminal layers now correctly reflect that real entity IDs are strings, not integers
 
-## Version 0.3.0
+## Version 0.3.0-alpha
 
 ### New
 
@@ -33,7 +33,7 @@
 - Custom views are now defined under the `custom_views` key in `custom-views.yaml` (previously `views` or `reports` key in `reports.yaml`)
 - The `gran --help` output now lists `custom-view, cv` after `view, v` and includes the previously missing `version, ve` entry
 
-## Version 0.2.0
+## Version 0.2.0-alpha
 
 ### New
 
