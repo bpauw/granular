@@ -4,9 +4,11 @@ from typing import Optional, TypedDict
 
 import pendulum
 
+from granular.model.entity_id import EntityId
+
 
 class Event(TypedDict):
-    id: Optional[int]
+    id: Optional[EntityId]
     entity_type: str
     title: Optional[str]
     description: Optional[str]

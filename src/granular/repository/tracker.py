@@ -15,12 +15,12 @@ except ImportError:
 from granular import configuration, time
 from granular.model.tracker import Tracker
 from granular.repository.tag import TAG_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class TrackerRepository:
     def __init__(self) -> None:
         self._trackers: Optional[list[Tracker]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -31,47 +31,29 @@ class TrackerRepository:
             raise ValueError()
         return self._trackers
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         trackers_data = load(
             configuration.DATA_TRACKERS_PATH.read_text(), Loader=Loader
         )
-        self._next_id = int(trackers_data["next_id"])
         raw_trackers = trackers_data["trackers"]
         self._trackers = [
             self.__convert_tracker_for_deserialization(tracker)
             for tracker in raw_trackers
         ]
 
-    def __save_data(self, trackers: list[Tracker], next_id: int) -> None:
+    def __save_data(self, trackers: list[Tracker]) -> None:
         serializable_trackers = [
             self.__convert_tracker_for_serialization(tracker)
             for tracker in deepcopy(trackers)
         ]
-        trackers_data = {"next_id": next_id, "trackers": serializable_trackers}
+        trackers_data = {"trackers": serializable_trackers}
         configuration.DATA_TRACKERS_PATH.write_text(dump(trackers_data, Dumper=Dumper))
 
     def flush(self) -> bool:
-        if self._trackers is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._trackers, self._next_id)
+        if self._trackers is not None and self.is_dirty:
+            self.__save_data(self._trackers)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_tracker_for_serialization(self, tracker: Tracker) -> dict[str, Any]:
         serializable_tracker = cast(dict[str, Any], tracker)
@@ -105,10 +87,10 @@ class TrackerRepository:
         )
         return cast(Tracker, deserializable_tracker)
 
-    def save_new_tracker(self, tracker: Tracker) -> int:
+    def save_new_tracker(self, tracker: Tracker) -> EntityId:
         self.is_dirty = True
 
-        tracker["id"] = self.__get_next_id()
+        tracker["id"] = generate_entity_id()
 
         # Deduplicate tags
         if tracker["tags"] is not None:
@@ -124,7 +106,7 @@ class TrackerRepository:
 
     def modify_tracker(
         self,
-        id: int,
+        id: EntityId,
         name: Optional[str],
         description: Optional[str],
         entry_type: Optional[str],
@@ -208,7 +190,7 @@ class TrackerRepository:
     def get_all_trackers(self) -> list[Tracker]:
         return deepcopy(self.trackers)
 
-    def get_tracker(self, id: int) -> Tracker:
+    def get_tracker(self, id: EntityId) -> Tracker:
         return deepcopy(
             [tracker for tracker in self.trackers if tracker["id"] == id][0]
         )

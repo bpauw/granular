@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from granular.model.entity_id import EntityId
+
 from rich import box
 from rich.console import Console
 from rich.table import Table
@@ -38,7 +40,7 @@ def entries_view(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("entries", cast(int, entry["id"]))
+                    ID_MAP_REPO.associate_id("entries", cast(EntityId, entry["id"]))
                 )
             elif column == "timestamp":
                 column_value = (
@@ -82,7 +84,7 @@ def single_entry_view(
 
     entry_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("entries", cast(int, entry["id"]))),
+        str(ID_MAP_REPO.associate_id("entries", cast(EntityId, entry["id"]))),
     )
     entry_table.add_row("tracker", tracker["name"])
     entry_table.add_row(

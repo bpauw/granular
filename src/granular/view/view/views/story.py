@@ -13,6 +13,7 @@ from typing import Optional
 import pendulum
 from rich.console import Console
 
+from granular.model.entity_id import EntityId
 from granular.color import (
     LOG_META_COLOR,
     NOTE_META_COLOR,
@@ -43,9 +44,9 @@ def story_view(
     notes: list[Note],
     entries: Optional[list[Entry]] = None,
     trackers: Optional[list[Tracker]] = None,
-    task_ids: Optional[list[int]] = None,
-    time_audit_ids: Optional[list[int]] = None,
-    event_ids: Optional[list[int]] = None,
+    task_ids: Optional[list[EntityId]] = None,
+    time_audit_ids: Optional[list[EntityId]] = None,
+    event_ids: Optional[list[EntityId]] = None,
     projects: Optional[list[str]] = None,
     tags: Optional[list[str]] = None,
     start_date: Optional[pendulum.DateTime] = None,
@@ -301,7 +302,7 @@ class StoryDataCollector:
             t["id"]: t for t in self.all_trackers if t["id"] is not None
         }
 
-    def collect_for_tasks(self, task_ids: list[int]) -> dict:
+    def collect_for_tasks(self, task_ids: list[EntityId]) -> dict:
         """
         Collect all entities related to the specified tasks.
 
@@ -311,10 +312,10 @@ class StoryDataCollector:
         - Logs/Notes where reference_type = "task" AND reference_id = task.id
         - Logs/Notes where reference_type = "time_audit" AND reference_id is a time audit of this task
         """
-        result_tasks: set[int] = set()
-        result_time_audits: set[int] = set()
-        result_logs: set[int] = set()
-        result_notes: set[int] = set()
+        result_tasks: set[EntityId] = set()
+        result_time_audits: set[EntityId] = set()
+        result_logs: set[EntityId] = set()
+        result_notes: set[EntityId] = set()
 
         for task_id in task_ids:
             if task_id not in self.tasks_by_id:
@@ -381,7 +382,7 @@ class StoryDataCollector:
             "entries": [],
         }
 
-    def collect_for_time_audits(self, time_audit_ids: list[int]) -> dict:
+    def collect_for_time_audits(self, time_audit_ids: list[EntityId]) -> dict:
         """
         Collect all entities related to the specified time audits.
 
@@ -389,9 +390,9 @@ class StoryDataCollector:
         - The time audits themselves
         - Logs/Notes where reference_type = "time_audit" AND reference_id = time_audit.id
         """
-        result_time_audits: set[int] = set()
-        result_logs: set[int] = set()
-        result_notes: set[int] = set()
+        result_time_audits: set[EntityId] = set()
+        result_logs: set[EntityId] = set()
+        result_notes: set[EntityId] = set()
 
         for ta_id in time_audit_ids:
             if ta_id not in self.time_audits_by_id:
@@ -431,7 +432,7 @@ class StoryDataCollector:
             "entries": [],
         }
 
-    def collect_for_events(self, event_ids: list[int]) -> dict:
+    def collect_for_events(self, event_ids: list[EntityId]) -> dict:
         """
         Collect all entities related to the specified events.
 
@@ -439,9 +440,9 @@ class StoryDataCollector:
         - The events themselves
         - Logs/Notes where reference_type = "event" AND reference_id = event.id
         """
-        result_events: set[int] = set()
-        result_logs: set[int] = set()
-        result_notes: set[int] = set()
+        result_events: set[EntityId] = set()
+        result_logs: set[EntityId] = set()
+        result_notes: set[EntityId] = set()
 
         for event_id in event_ids:
             if event_id not in self.events_by_id:
@@ -503,9 +504,9 @@ class StoryDataCollector:
         result_entries: list[Entry] = []
 
         # Collect task IDs for nested log/note lookup
-        project_task_ids: set[int] = set()
-        project_time_audit_ids: set[int] = set()
-        project_event_ids: set[int] = set()
+        project_task_ids: set[EntityId] = set()
+        project_time_audit_ids: set[EntityId] = set()
+        project_event_ids: set[EntityId] = set()
 
         for project in projects:
             # Tasks with this project
@@ -636,9 +637,9 @@ class StoryDataCollector:
             return True
 
         # Collect entity IDs for nested log/note lookup
-        tag_task_ids: set[int] = set()
-        tag_time_audit_ids: set[int] = set()
-        tag_event_ids: set[int] = set()
+        tag_task_ids: set[EntityId] = set()
+        tag_time_audit_ids: set[EntityId] = set()
+        tag_event_ids: set[EntityId] = set()
 
         # Tasks with all tags
         for task in self.all_tasks:
@@ -732,9 +733,9 @@ class StoryDataCollector:
 
     def collect(
         self,
-        task_ids: Optional[list[int]] = None,
-        time_audit_ids: Optional[list[int]] = None,
-        event_ids: Optional[list[int]] = None,
+        task_ids: Optional[list[EntityId]] = None,
+        time_audit_ids: Optional[list[EntityId]] = None,
+        event_ids: Optional[list[EntityId]] = None,
         projects: Optional[list[str]] = None,
         tags: Optional[list[str]] = None,
         tag_regex: Optional[list[str]] = None,
@@ -919,9 +920,9 @@ def calculate_date_range(
 
 
 def generate_story_header(
-    task_ids: Optional[list[int]] = None,
-    time_audit_ids: Optional[list[int]] = None,
-    event_ids: Optional[list[int]] = None,
+    task_ids: Optional[list[EntityId]] = None,
+    time_audit_ids: Optional[list[EntityId]] = None,
+    event_ids: Optional[list[EntityId]] = None,
     projects: Optional[list[str]] = None,
     tags: Optional[list[str]] = None,
     tasks: Optional[list[Task]] = None,

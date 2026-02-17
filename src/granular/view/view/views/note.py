@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from granular.model.entity_id import EntityId
+
 import pendulum
 from rich import box
 from rich.console import Console
@@ -50,7 +52,7 @@ def notes_report(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("notes", cast(int, note["id"]))
+                    ID_MAP_REPO.associate_id("notes", cast(EntityId, note["id"]))
                 )
             elif column == "reference_id":
                 if (
@@ -96,7 +98,7 @@ def single_note_report(active_context: str, note: Note) -> None:
 
     note_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("notes", cast(int, note["id"]))),
+        str(ID_MAP_REPO.associate_id("notes", cast(EntityId, note["id"]))),
     )
     note_table.add_row("reference_type", note["reference_type"] or "")
     if note["reference_id"] is not None and note["reference_type"] is not None:

@@ -2,6 +2,8 @@
 
 from typing import Optional, cast
 
+from granular.model.entity_id import EntityId
+
 import pendulum
 from rich import box
 from rich.console import Console
@@ -43,7 +45,7 @@ def trackers_view(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("trackers", cast(int, tracker["id"]))
+                    ID_MAP_REPO.associate_id("trackers", cast(EntityId, tracker["id"]))
                 )
             elif column == "tags":
                 column_value = format_tags(tracker["tags"])
@@ -82,7 +84,7 @@ def single_tracker_view(
 
     tracker_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("trackers", cast(int, tracker["id"]))),
+        str(ID_MAP_REPO.associate_id("trackers", cast(EntityId, tracker["id"]))),
     )
     tracker_table.add_row("name", tracker["name"])
     tracker_table.add_row("description", tracker["description"] or "")
@@ -146,7 +148,9 @@ def tracker_today_view(
     for tracker in trackers:
         status = get_tracker_status_for_date(tracker, entries, today)
 
-        tracker_id = str(ID_MAP_REPO.associate_id("trackers", cast(int, tracker["id"])))
+        tracker_id = str(
+            ID_MAP_REPO.associate_id("trackers", cast(EntityId, tracker["id"]))
+        )
         tracker_name = tracker["name"]
         entry_type = tracker["entry_type"]
 

@@ -14,12 +14,12 @@ except ImportError:
 from granular import configuration, time
 from granular.model.context import Context
 from granular.repository.configuration import CONFIGURATION_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class ContextRepository:
     def __init__(self) -> None:
         self._contexts: Optional[list[Context]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -30,43 +30,25 @@ class ContextRepository:
             raise ValueError()
         return self._contexts
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         contexts_data = load(configuration.DATA_CONTEXT_PATH.read_text(), Loader=Loader)
-        self._next_id = int(contexts_data["next_id"])
         raw_contexts = contexts_data["contexts"]
         self._contexts = [
             self.__convert_context_for_deserialization(context)
             for context in raw_contexts
         ]
 
-    def __save_data(self, contexts: list[Context], next_id: int) -> None:
+    def __save_data(self, contexts: list[Context]) -> None:
         serializable_contexts = [
             self.__convert_context_for_serialization(context)
             for context in deepcopy(contexts)
         ]
-        contexts_data = {"next_id": next_id, "contexts": serializable_contexts}
+        contexts_data = {"contexts": serializable_contexts}
         configuration.DATA_CONTEXT_PATH.write_text(dump(contexts_data, Dumper=Dumper))
 
     def flush(self) -> None:
-        if self._contexts is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._contexts, self._next_id)
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
+        if self._contexts is not None and self.is_dirty:
+            self.__save_data(self._contexts)
 
     def __convert_context_for_serialization(self, context: Context) -> dict[str, Any]:
         serializable_context = cast(dict[str, Any], context)
@@ -94,7 +76,7 @@ class ContextRepository:
     def get_active_context(self) -> Context:
         return deepcopy([context for context in self.contexts if context["active"]][0])
 
-    def save_new_context(self, context: Context) -> int:
+    def save_new_context(self, context: Context) -> EntityId:
         self.is_dirty = True
 
         # Check for duplicate names
@@ -104,13 +86,13 @@ class ContextRepository:
                     f"A context with the name '{context['name']}' already exists"
                 )
 
-        context["id"] = self.__get_next_id()
+        context["id"] = generate_entity_id()
         self.contexts.append(context)
         return context["id"]
 
     def modify_context(
         self,
-        id: int,
+        id: EntityId,
         new_name: Optional[str],
         active: Optional[bool],
         auto_added_tags: Optional[list[str]],
@@ -167,11 +149,11 @@ class ContextRepository:
         if remove_default_note_folder:
             context["default_note_folder"] = None
 
-    def delete_context(self, id: int) -> None:
+    def delete_context(self, id: EntityId) -> None:
         self.is_dirty = True
         self._contexts = [context for context in self.contexts if context["id"] != id]
 
-    def get_context(self, id: int) -> Context:
+    def get_context(self, id: EntityId) -> Context:
         return deepcopy(
             [context for context in self.contexts if context["id"] == id][0]
         )

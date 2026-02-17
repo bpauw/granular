@@ -4,12 +4,14 @@ from typing import Optional, TypedDict
 
 import pendulum
 
+from granular.model.entity_id import EntityId
+
 
 class Task(TypedDict):
-    id: Optional[int]
+    id: Optional[EntityId]
     entity_type: str
-    cloned_from_id: Optional[int]
-    timespan_id: Optional[int]
+    cloned_from_id: Optional[EntityId]
+    timespan_id: Optional[EntityId]
     description: Optional[str]
     project: Optional[str]
     tags: Optional[list[str]]

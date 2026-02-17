@@ -4,10 +4,12 @@ from typing import NotRequired, Optional, TypedDict
 
 import pendulum
 
+from granular.model.entity_id import EntityId
+
 
 class Note(TypedDict):
-    id: Optional[int]
-    reference_id: Optional[int]
+    id: Optional[EntityId]
+    reference_id: Optional[EntityId]
     reference_type: Optional[str]
     timestamp: Optional[pendulum.DateTime]
     created: pendulum.DateTime

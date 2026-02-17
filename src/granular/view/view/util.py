@@ -4,6 +4,7 @@ from typing import Optional
 
 import pendulum
 
+from granular.model.entity_id import EntityId
 from granular.model.log import Log
 from granular.model.note import Note
 from granular.model.task import Task
@@ -77,7 +78,7 @@ def render_duration(duration: Optional[pendulum.Duration]) -> Optional[str]:
 
 
 def calculate_task_total_duration(
-    task_id: Optional[int], time_audits: list[TimeAudit]
+    task_id: Optional[EntityId], time_audits: list[TimeAudit]
 ) -> Optional[pendulum.Duration]:
     """Calculate the total duration of all time audits associated with a task."""
     if task_id is None:
@@ -104,7 +105,9 @@ def format_tags(tags: Optional[list[str]]) -> str:
     return ", ".join(tags)
 
 
-def has_notes(entity_id: Optional[int], entity_type: str, notes: list[Note]) -> str:
+def has_notes(
+    entity_id: Optional[EntityId], entity_type: str, notes: list[Note]
+) -> str:
     """Check if an entity has any notes and return a checkmark if so."""
     if entity_id is None:
         return ""
@@ -118,7 +121,7 @@ def has_notes(entity_id: Optional[int], entity_type: str, notes: list[Note]) -> 
     return ""
 
 
-def has_logs(entity_id: Optional[int], entity_type: str, logs: list[Log]) -> str:
+def has_logs(entity_id: Optional[EntityId], entity_type: str, logs: list[Log]) -> str:
     """Check if an entity has any logs and return a checkmark if so."""
     if entity_id is None:
         return ""

@@ -15,12 +15,12 @@ except ImportError:
 from granular import configuration, time
 from granular.model.timespan import Timespan
 from granular.repository.tag import TAG_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class TimespanRepository:
     def __init__(self) -> None:
         self._timespans: Optional[list[Timespan]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -31,49 +31,31 @@ class TimespanRepository:
             raise ValueError()
         return self._timespans
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         timespans_data = load(
             configuration.DATA_TIMESPANS_PATH.read_text(), Loader=Loader
         )
-        self._next_id = int(timespans_data["next_id"])
         raw_timespans = timespans_data["timespans"]
         self._timespans = [
             self.__convert_timespan_for_deserialization(timespan)
             for timespan in raw_timespans
         ]
 
-    def __save_data(self, timespans: list[Timespan], next_id: int) -> None:
+    def __save_data(self, timespans: list[Timespan]) -> None:
         serializable_timespans = [
             self.__convert_timespan_for_serialization(timespan)
             for timespan in deepcopy(timespans)
         ]
-        timespans_data = {"next_id": next_id, "timespans": serializable_timespans}
+        timespans_data = {"timespans": serializable_timespans}
         configuration.DATA_TIMESPANS_PATH.write_text(
             dump(timespans_data, Dumper=Dumper)
         )
 
     def flush(self) -> bool:
-        if self._timespans is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._timespans, self._next_id)
+        if self._timespans is not None and self.is_dirty:
+            self.__save_data(self._timespans)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_timespan_for_serialization(
         self, timespan: Timespan
@@ -135,10 +117,10 @@ class TimespanRepository:
         )
         return cast(Timespan, deserializable_timespan)
 
-    def save_new_timespan(self, timespan: Timespan) -> int:
+    def save_new_timespan(self, timespan: Timespan) -> EntityId:
         self.is_dirty = True
 
-        timespan["id"] = self.__get_next_id()
+        timespan["id"] = generate_entity_id()
 
         # Deduplicate tags
         if timespan["tags"] is not None:
@@ -154,7 +136,7 @@ class TimespanRepository:
 
     def modify_timespan(
         self,
-        id: int,
+        id: EntityId,
         description: Optional[str],
         project: Optional[str],
         tags: Optional[list[str]],
@@ -229,7 +211,7 @@ class TimespanRepository:
     def get_all_timespans(self) -> list[Timespan]:
         return deepcopy(self.timespans)
 
-    def get_timespan(self, id: int) -> Timespan:
+    def get_timespan(self, id: EntityId) -> Timespan:
         return deepcopy(
             [timespan for timespan in self.timespans if timespan["id"] == id][0]
         )

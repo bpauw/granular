@@ -33,6 +33,7 @@ from granular.model.custom_view import (
     TimeAuditSubView,
     TimespanSubView,
 )
+from granular.model.entity_id import EntityId
 from granular.model.event import Event
 from granular.model.log import Log
 from granular.model.note import Note
@@ -848,14 +849,14 @@ def __execute_story_sub_view(
     note_meta_color_value = sub_view.get("note_meta_color")
 
     # Convert anchor values to lists
-    task_ids: list[int] | None = None
+    task_ids: list[EntityId] | None = None
     if task_value is not None:
         if isinstance(task_value, int):
             task_ids = [ID_MAP_REPO.get_real_id("tasks", task_value)]
         else:
             task_ids = [ID_MAP_REPO.get_real_id("tasks", tid) for tid in task_value]
 
-    time_audit_ids: list[int] | None = None
+    time_audit_ids: list[EntityId] | None = None
     if time_audit_value is not None:
         if isinstance(time_audit_value, int):
             time_audit_ids = [ID_MAP_REPO.get_real_id("time_audits", time_audit_value)]
@@ -865,7 +866,7 @@ def __execute_story_sub_view(
                 for taid in time_audit_value
             ]
 
-    event_ids: list[int] | None = None
+    event_ids: list[EntityId] | None = None
     if event_value is not None:
         if isinstance(event_value, int):
             event_ids = [ID_MAP_REPO.get_real_id("events", event_value)]

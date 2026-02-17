@@ -6,6 +6,7 @@ import pendulum
 import typer
 
 from granular.color import get_random_color
+from granular.model.entity_id import EntityId
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
 )
@@ -248,7 +249,7 @@ def modify(
 
     modified_trackers = []
     for tracker_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
 
         # Handle tag modifications
         updated_tags = None
@@ -321,7 +322,7 @@ def delete(id: str) -> None:
     deleted_trackers = []
 
     for tracker_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
 
         TRACKER_REPO.modify_tracker(
             real_id,
@@ -377,7 +378,7 @@ def archive(id: str) -> None:
     archived_trackers = []
 
     for tracker_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
 
         TRACKER_REPO.modify_tracker(
             real_id,
@@ -435,7 +436,7 @@ def unarchive(id: str) -> None:
     unarchived_trackers = []
 
     for tracker_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
 
         TRACKER_REPO.modify_tracker(
             real_id,
@@ -532,7 +533,7 @@ def entry(
     active_context_name = cast(str, active_context["name"])
 
     # Resolve tracker ID
-    real_tracker_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+    real_tracker_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
     tracker = TRACKER_REPO.get_tracker(real_tracker_id)
 
     # Determine timestamp
@@ -658,7 +659,7 @@ def entry_modify(
 
     modified_entries = []
     for entry_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("entries", entry_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("entries", entry_id)
         entry_obj = ENTRY_REPO.get_entry(real_id)
         tracker = TRACKER_REPO.get_tracker(entry_obj["tracker_id"])
 
@@ -736,7 +737,7 @@ def entry_delete(
     active_context = CONTEXT_REPO.get_active_context()
     active_context_name = cast(str, active_context["name"])
 
-    real_entry_id: int = ID_MAP_REPO.get_real_id("entries", entry_id)
+    real_entry_id: EntityId = ID_MAP_REPO.get_real_id("entries", entry_id)
     entry_obj = ENTRY_REPO.get_entry(real_entry_id)
     tracker = TRACKER_REPO.get_tracker(entry_obj["tracker_id"])
 

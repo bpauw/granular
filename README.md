@@ -151,7 +151,12 @@ gran context activate work
 
 ### Synthetic IDs
 
-When viewing entities, Granular displays short sequential IDs (1, 2, 3...) rather than internal database IDs. These synthetic IDs are mapped to real IDs behind the scenes. This keeps the IDs you type short and predictable. The mapping resets on each view command by default (configurable via `clear_ids_on_view`).
+When viewing entities, Granular displays short sequential IDs (1, 2, 3...) rather than internal IDs. Internally, all entity IDs are UUID v4 strings (e.g., `550e8400-e29b-41d4-a716-446655440000`), but you never need to interact with them directly. Granular's synthetic ID system maps the short integers you see and type to these UUIDs behind the scenes.
+
+This means:
+- You always use short IDs like `1`, `3-5`, or `1,2,3` when running commands
+- The mapping resets on each view command by default (configurable via `clear_ids_on_view`)
+- UUIDs ensure IDs are globally unique and stable, even across merges or data imports
 
 ### Soft Deletion
 
@@ -637,7 +642,9 @@ gran view entries <tracker_id>   # List entries for a tracker
 
 Custom views let you compose multiple sub-views into a single named command. Define them in `custom-views.yaml` in your data directory under the `custom_views` key.
 
-> **Migration note:** If you are upgrading from a previous version that used `reports.yaml`, the file is automatically renamed to `custom-views.yaml` and the YAML key is updated to `custom_views` on first run. No manual action is required.
+> **Migration note (v0.3.0):** If you are upgrading from a previous version that used `reports.yaml`, the file is automatically renamed to `custom-views.yaml` and the YAML key is updated to `custom_views` on first run. No manual action is required.
+
+> **Migration note (v0.4.0):** Entity IDs have been converted from integers to UUIDs. If your custom views reference entities by ID (e.g., in `story` sub-views with `task`, `time_audit`, or `event` fields), you will need to update those IDs manually. After migration, an `id_migration_map.yaml` file is written to your data directory containing the mapping from old integer IDs to new UUIDs. Use this file to look up the new UUIDs for any entity IDs referenced in your `custom-views.yaml`.
 
 ### Defining Custom Views
 
@@ -1013,8 +1020,23 @@ All data is stored as plain YAML files on disk — no database is required. The 
 | `custom-views.yaml` | Custom view definitions |
 | `id_map.yaml` | Synthetic-to-real ID mapping (session-specific) |
 | `migrate.yaml` | Migration version state |
+| `id_migration_map.yaml` | Old integer-to-UUID mapping (generated once by migration 3, kept for reference) |
+
+Entity data files store each entity's `id` as a UUID v4 string. Cross-entity references (e.g., a time audit's `task_id`, a note's `reference_id`) are also stored as UUID strings. The synthetic ID map (`id_map.yaml`) maps short integer IDs to these UUIDs for display and user input.
 
 Data files use lazy loading and in-memory caching for performance, flushed to disk on exit.
+
+### Data Migrations
+
+Granular includes an automatic migration system. When the application detects that your data files are from an older version, it runs the necessary migrations before proceeding. Migrations are non-destructive and operate directly on the YAML data files. If git versioning is enabled, a checkpoint commit is created after each migration completes.
+
+Current migrations:
+
+| Migration | Description |
+|---|---|
+| 1 | Initial migration |
+| 2 | Rename `reports.yaml` to `custom-views.yaml` |
+| 3 | Convert all entity IDs from integers to UUID v4 strings |
 
 ### Global Options
 

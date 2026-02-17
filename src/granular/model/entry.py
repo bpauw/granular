@@ -4,11 +4,13 @@ from typing import Optional, TypedDict, Union
 
 import pendulum
 
+from granular.model.entity_id import EntityId
+
 
 class Entry(TypedDict):
-    id: Optional[int]
+    id: Optional[EntityId]
     entity_type: str  # "entry"
-    tracker_id: int  # Reference to parent tracker
+    tracker_id: EntityId  # Reference to parent tracker
     timestamp: pendulum.DateTime  # When this entry was recorded
 
     # Value fields (only one is set based on tracker's value_type)

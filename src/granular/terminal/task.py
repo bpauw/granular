@@ -6,6 +6,7 @@ import pendulum
 import typer
 
 from granular.color import get_random_color
+from granular.model.entity_id import EntityId
 from granular.model.entity_type import EntityType
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
@@ -143,7 +144,11 @@ def add(
     task["scheduled"] = python_to_pendulum_utc_optional(scheduled)
     task["due"] = python_to_pendulum_utc_optional(due)
     task["started"] = python_to_pendulum_utc_optional(started)
-    task["timespan_id"] = timespan_id
+    task["timespan_id"] = (
+        ID_MAP_REPO.get_real_id("timespans", timespan_id)
+        if timespan_id is not None
+        else None
+    )
 
     id = TASK_REPO.save_new_task(task)
 
@@ -320,7 +325,7 @@ def modify(
     # Process each task
     modified_tasks = []
     for task_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
 
         # Handle tag modifications
         updated_tags = None
@@ -340,10 +345,21 @@ def modify(
             # Set to None if empty, otherwise keep the list
             updated_tags = updated_tags if len(updated_tags) > 0 else None
 
+        real_cloned_from_id: Optional[EntityId] = (
+            ID_MAP_REPO.get_real_id("tasks", cloned_from_id)
+            if cloned_from_id is not None
+            else None
+        )
+        real_timespan_id: Optional[EntityId] = (
+            ID_MAP_REPO.get_real_id("timespans", timespan_id)
+            if timespan_id is not None
+            else None
+        )
+
         TASK_REPO.modify_task(
             real_id,
-            cloned_from_id,
-            timespan_id,
+            real_cloned_from_id,
+            real_timespan_id,
             description,
             project,
             updated_tags,
@@ -407,7 +423,7 @@ def complete(id: str) -> None:
     # Process each task
     completed_tasks = []
     for task_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
 
         TASK_REPO.modify_task(
             real_id,
@@ -476,7 +492,7 @@ def not_complete(id: str) -> None:
     # Process each task
     not_completed_tasks = []
     for task_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
 
         TASK_REPO.modify_task(
             real_id,
@@ -547,7 +563,7 @@ def cancel(id: str) -> None:
     # Process each task
     cancelled_tasks = []
     for task_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
 
         TASK_REPO.modify_task(
             real_id,
@@ -616,7 +632,7 @@ def delete(id: str) -> None:
     # Process each task
     deleted_tasks = []
     for task_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
 
         TASK_REPO.modify_task(
             real_id,

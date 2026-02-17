@@ -4,11 +4,12 @@ from typing import NotRequired, Optional, TypedDict
 
 import pendulum
 
+from granular.model.entity_id import EntityId
 from granular.model.filter import Filters
 
 
 class Context(TypedDict):
-    id: Optional[int]
+    id: Optional[EntityId]
     name: Optional[str]
     active: Optional[bool]
     auto_added_tags: Optional[list[str]]

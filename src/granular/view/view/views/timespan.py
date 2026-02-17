@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from granular.model.entity_id import EntityId
+
 import pendulum
 from rich import box
 from rich.console import Console
@@ -37,7 +39,9 @@ def timespans_view(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("timespans", cast(int, timespan["id"]))
+                    ID_MAP_REPO.associate_id(
+                        "timespans", cast(EntityId, timespan["id"])
+                    )
                 )
             elif column == "tags":
                 column_value = format_tags(timespan["tags"])
@@ -71,7 +75,7 @@ def single_timespan_view(active_context: str, timespan: Timespan) -> None:
 
     timespan_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("timespans", cast(int, timespan["id"]))),
+        str(ID_MAP_REPO.associate_id("timespans", cast(EntityId, timespan["id"]))),
     )
     timespan_table.add_row("description", timespan["description"])
     timespan_table.add_row("project", timespan["project"])

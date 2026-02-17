@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from granular.model.entity_id import EntityId
+
 import pendulum
 from rich import box
 from rich.console import Console
@@ -48,7 +50,7 @@ def logs_view(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("logs", cast(int, log["id"]))
+                    ID_MAP_REPO.associate_id("logs", cast(EntityId, log["id"]))
                 )
             elif column == "reference_id":
                 if (
@@ -92,7 +94,7 @@ def single_log_report(active_context: str, log: Log) -> None:
 
     log_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("logs", cast(int, log["id"]))),
+        str(ID_MAP_REPO.associate_id("logs", cast(EntityId, log["id"]))),
     )
     log_table.add_row("reference_type", log["reference_type"] or "")
     if log["reference_id"] is not None and log["reference_type"] is not None:

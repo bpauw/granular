@@ -5,6 +5,7 @@ from typing import Annotated, Optional, cast
 import pendulum
 import typer
 
+from granular.model.entity_id import EntityId
 from granular.model.entity_type import EntityType
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
@@ -105,7 +106,7 @@ def add(
 
     # Determine reference_type and reference_id (convert synthetic_id to real_id)
     reference_type: Optional[str] = None
-    reference_id: Optional[int] = None
+    reference_id: Optional[EntityId] = None
 
     if ref_task is not None:
         reference_type = EntityType.TASK
@@ -289,7 +290,7 @@ def modify(
 
     # Determine reference_type and reference_id (convert synthetic_id to real_id)
     reference_type: Optional[str] = None
-    reference_id: Optional[int] = None
+    reference_id: Optional[EntityId] = None
 
     if ref_task is not None:
         reference_type = EntityType.TASK
@@ -307,7 +308,7 @@ def modify(
     # Process each note
     modified_notes = []
     for note_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("notes", note_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("notes", note_id)
 
         # Handle tag modifications
         updated_tags = None
@@ -411,7 +412,7 @@ def delete(id: str) -> None:
     # Process each note
     deleted_notes = []
     for note_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("notes", note_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("notes", note_id)
 
         NOTE_REPO.modify_note(
             real_id,

@@ -15,12 +15,12 @@ except ImportError:
 from granular import configuration, time
 from granular.model.log import Log
 from granular.repository.tag import TAG_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class LogRepository:
     def __init__(self) -> None:
         self._logs: Optional[list[Log]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -31,41 +31,23 @@ class LogRepository:
             raise ValueError()
         return self._logs
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         logs_data = load(configuration.DATA_LOGS_PATH.read_text(), Loader=Loader)
-        self._next_id = int(logs_data["next_id"])
         raw_logs = logs_data["logs"]
         self._logs = [self.__convert_log_for_deserialization(log) for log in raw_logs]
 
-    def __save_data(self, logs: list[Log], next_id: int) -> None:
+    def __save_data(self, logs: list[Log]) -> None:
         serializable_logs = [
             self.__convert_log_for_serialization(log) for log in deepcopy(logs)
         ]
-        logs_data = {"next_id": next_id, "logs": serializable_logs}
+        logs_data = {"logs": serializable_logs}
         configuration.DATA_LOGS_PATH.write_text(dump(logs_data, Dumper=Dumper))
 
     def flush(self) -> bool:
-        if self._logs is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._logs, self._next_id)
+        if self._logs is not None and self.is_dirty:
+            self.__save_data(self._logs)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_log_for_serialization(self, log: Log) -> dict[str, Any]:
         serializable_log = cast(dict[str, Any], log)
@@ -99,10 +81,10 @@ class LogRepository:
         )
         return cast(Log, deserializable_log)
 
-    def save_new_log(self, log: Log) -> int:
+    def save_new_log(self, log: Log) -> EntityId:
         self.is_dirty = True
 
-        log["id"] = self.__get_next_id()
+        log["id"] = generate_entity_id()
 
         # Deduplicate tags
         if log["tags"] is not None:
@@ -118,8 +100,8 @@ class LogRepository:
 
     def modify_log(
         self,
-        id: int,
-        reference_id: Optional[int],
+        id: EntityId,
+        reference_id: Optional[EntityId],
         reference_type: Optional[str],
         timestamp: Optional[pendulum.DateTime],
         text: Optional[str],
@@ -182,7 +164,7 @@ class LogRepository:
     def get_all_logs(self) -> list[Log]:
         return deepcopy(self.logs)
 
-    def get_log(self, id: int) -> Log:
+    def get_log(self, id: EntityId) -> Log:
         return deepcopy([log for log in self.logs if log["id"] == id][0])
 
 

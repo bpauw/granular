@@ -6,6 +6,7 @@ import pendulum
 import typer
 
 from granular.color import get_random_color
+from granular.model.entity_id import EntityId
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
 )
@@ -231,7 +232,7 @@ def modify(
     # Process each timespan
     modified_timespans = []
     for timespan_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("timespans", timespan_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("timespans", timespan_id)
 
         timespan = TIMESPAN_REPO.get_timespan(real_id)
         tags = timespan["tags"]
@@ -303,7 +304,7 @@ def complete(id: str) -> None:
     # Process each timespan
     completed_timespans = []
     for timespan_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("timespans", timespan_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("timespans", timespan_id)
 
         TIMESPAN_REPO.modify_timespan(
             real_id,
@@ -362,7 +363,7 @@ def delete(id: str) -> None:
     # Process each timespan
     deleted_timespans = []
     for timespan_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("timespans", timespan_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("timespans", timespan_id)
 
         TIMESPAN_REPO.modify_timespan(
             real_id,

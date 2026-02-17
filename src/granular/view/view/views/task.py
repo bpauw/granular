@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from granular.model.entity_id import EntityId
+
 import pendulum
 from rich import box
 from rich.console import Console
@@ -61,7 +63,7 @@ def tasks_view(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("tasks", cast(int, task["id"]))
+                    ID_MAP_REPO.associate_id("tasks", cast(EntityId, task["id"]))
                 )
             elif column == "state":
                 column_value = task_state(task, tasks)
@@ -112,7 +114,7 @@ def single_task_view(
 
     task_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("tasks", cast(int, task["id"]))),
+        str(ID_MAP_REPO.associate_id("tasks", cast(EntityId, task["id"]))),
     )
     if task["cloned_from_id"] is not None:
         task_table.add_row(

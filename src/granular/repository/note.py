@@ -21,6 +21,7 @@ from granular.model.note import Note
 from granular.repository.configuration import CONFIGURATION_REPO
 from granular.repository.tag import TAG_REPO
 from granular.time import now_utc
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class LiteralString(str):
@@ -59,7 +60,6 @@ except ImportError:
 class NoteRepository:
     def __init__(self) -> None:
         self._notes: Optional[list[Note]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -70,43 +70,25 @@ class NoteRepository:
             raise ValueError()
         return self._notes
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         notes_data = load(configuration.DATA_NOTES_PATH.read_text(), Loader=Loader)
-        self._next_id = int(notes_data["next_id"])
         raw_notes = notes_data["notes"]
         self._notes = [
             self.__convert_note_for_deserialization(note) for note in raw_notes
         ]
 
-    def __save_data(self, notes: list[Note], next_id: int) -> None:
+    def __save_data(self, notes: list[Note]) -> None:
         serializable_notes = [
             self.__convert_note_for_serialization(note) for note in deepcopy(notes)
         ]
-        notes_data = {"next_id": next_id, "notes": serializable_notes}
+        notes_data = {"notes": serializable_notes}
         configuration.DATA_NOTES_PATH.write_text(dump(notes_data, Dumper=Dumper))
 
     def flush(self) -> bool:
-        if self._notes is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._notes, self._next_id)
+        if self._notes is not None and self.is_dirty:
+            self.__save_data(self._notes)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_note_for_serialization(self, note: Note) -> dict[str, Any]:
         serializable_note = cast(dict[str, Any], note)
@@ -416,7 +398,7 @@ class NoteRepository:
         note: Note,
         external_filename: Optional[str] = None,
         note_folder_name: Optional[str] = None,
-    ) -> int:
+    ) -> EntityId:
         """
         Save new note. Handles both embedded and external notes.
 
@@ -430,7 +412,7 @@ class NoteRepository:
         """
         self.is_dirty = True
 
-        note["id"] = self.__get_next_id()
+        note["id"] = generate_entity_id()
 
         # Deduplicate tags
         if note["tags"] is not None:
@@ -500,8 +482,8 @@ class NoteRepository:
 
     def modify_note(
         self,
-        id: int,
-        reference_id: Optional[int],
+        id: EntityId,
+        reference_id: Optional[EntityId],
         reference_type: Optional[str],
         timestamp: Optional[pendulum.DateTime],
         deleted: Optional[pendulum.DateTime],
@@ -626,7 +608,7 @@ class NoteRepository:
 
         return notes
 
-    def get_note(self, id: int) -> Note:
+    def get_note(self, id: EntityId) -> Note:
         """Get note by ID. Loads content from external file if applicable."""
 
         note = deepcopy([note for note in self.notes if note["id"] == id][0])

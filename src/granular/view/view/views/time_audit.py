@@ -7,6 +7,7 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from granular.model.entity_id import EntityId
 from granular.model.log import Log
 from granular.model.note import Note
 from granular.model.time_audit import TimeAudit
@@ -48,8 +49,8 @@ def time_audits_report(
     chronological_audits.sort(key=lambda ta: ta["start"])  # type: ignore[arg-type, return-value]
 
     # Build adjacency maps: for each time_audit id, find chronological prev/next
-    prev_end_map: dict[int, Optional[pendulum.DateTime]] = {}
-    next_start_map: dict[int, Optional[pendulum.DateTime]] = {}
+    prev_end_map: dict[EntityId, Optional[pendulum.DateTime]] = {}
+    next_start_map: dict[EntityId, Optional[pendulum.DateTime]] = {}
 
     for i, audit in enumerate(chronological_audits):
         audit_id = audit["id"]
@@ -97,7 +98,9 @@ def time_audits_report(
 
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("time_audits", cast(int, time_audit["id"]))
+                    ID_MAP_REPO.associate_id(
+                        "time_audits", cast(EntityId, time_audit["id"])
+                    )
                 )
             elif column == "task_id":
                 if time_audit["task_id"] is not None:
@@ -194,7 +197,7 @@ def single_time_audit_report(
 
     time_audit_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("time_audits", cast(int, time_audit["id"]))),
+        str(ID_MAP_REPO.associate_id("time_audits", cast(EntityId, time_audit["id"]))),
     )
     time_audit_table.add_row("description", time_audit["description"])
     time_audit_table.add_row("project", time_audit["project"])

@@ -15,6 +15,7 @@ from granular.color import (
     NOTE_META_COLOR,
     TIME_AUDIT_META_COLOR,
 )
+from granular.model.entity_id import EntityId
 from granular.model.entry import Entry
 from granular.model.event import Event
 from granular.model.log import Log
@@ -777,7 +778,7 @@ def _render_day_column(
     day_end = date.end_of("day")
 
     # Build tracker lookup for getting tracker info from entry
-    tracker_by_id: dict[int, Tracker] = {}
+    tracker_by_id: dict[EntityId, Tracker] = {}
     if trackers is not None:
         for tracker in trackers:
             if tracker["id"] is not None:
@@ -1060,7 +1061,7 @@ def _render_day_column(
         if entries is not None and len(entries) > 0:
             # Group entries by tracker_id that fall in this time slot
             # Entry timestamp is rounded down to the time slot
-            slot_entries: dict[int, list[Entry]] = {}
+            slot_entries: dict[EntityId, list[Entry]] = {}
             for entry in entries:
                 tracker_info = tracker_by_id.get(entry["tracker_id"])
                 if tracker_info is None:
@@ -1232,7 +1233,7 @@ def _render_timeline(
         entries: List of tracker entries to display (defaults to None)
     """
     # Build tracker lookup for getting tracker info from entry
-    tracker_by_id: dict[int, Tracker] = {}
+    tracker_by_id: dict[EntityId, Tracker] = {}
     if trackers is not None:
         for tracker in trackers:
             if tracker["id"] is not None:
@@ -1386,7 +1387,7 @@ def _render_timeline(
         if entries is not None and len(entries) > 0:
             # Group entries by tracker_id that fall in this time slot
             # Entry timestamp is rounded down to the time slot
-            slot_entries: dict[int, list[Entry]] = {}
+            slot_entries: dict[EntityId, list[Entry]] = {}
             for entry in entries:
                 tracker_info = tracker_by_id.get(entry["tracker_id"])
                 if tracker_info is None:

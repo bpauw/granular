@@ -2,6 +2,7 @@
 
 from typing import Optional, TypedDict, Union, cast
 
+from granular.model.entity_id import EntityId
 from granular.model.event import Event
 from granular.model.log import Log
 from granular.model.note import Note
@@ -13,7 +14,7 @@ from granular.model.timespan import Timespan
 class SearchResult(TypedDict):
     """Represents a unified search result across all entity types."""
 
-    id: Optional[int]
+    id: Optional[EntityId]
     entity_type: str
     project: Optional[str]
     description: Optional[str]

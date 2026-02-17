@@ -22,6 +22,7 @@ from granular.color import (
     NOTE_META_COLOR,
     TIME_AUDIT_META_COLOR,
 )
+from granular.model.entity_id import EntityId
 from granular.model.entry import Entry
 from granular.model.event import Event
 from granular.model.log import Log
@@ -543,7 +544,7 @@ def render_entries(
         trackers: All trackers (for getting tracker info)
     """
     # Build tracker lookup
-    tracker_by_id: dict[int, Tracker] = {}
+    tracker_by_id: dict[EntityId, Tracker] = {}
     for tracker in trackers:
         if tracker["id"] is not None:
             tracker_by_id[tracker["id"]] = tracker

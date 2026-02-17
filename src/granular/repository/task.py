@@ -16,12 +16,12 @@ from granular import configuration, time
 from granular.model.task import Task
 from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class TaskRepository:
     def __init__(self) -> None:
         self._tasks: Optional[list[Task]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -32,43 +32,25 @@ class TaskRepository:
             raise ValueError()
         return self._tasks
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         tasks_data = load(configuration.DATA_TASKS_PATH.read_text(), Loader=Loader)
-        self._next_id = int(tasks_data["next_id"])
         raw_tasks = tasks_data["tasks"]
         self._tasks = [
             self.__convert_task_for_deserialization(task) for task in raw_tasks
         ]
 
-    def __save_data(self, tasks: list[Task], next_id: int) -> None:
+    def __save_data(self, tasks: list[Task]) -> None:
         serializable_tasks = [
             self.__convert_task_for_serialization(task) for task in deepcopy(tasks)
         ]
-        tasks_data = {"next_id": next_id, "tasks": serializable_tasks}
+        tasks_data = {"tasks": serializable_tasks}
         configuration.DATA_TASKS_PATH.write_text(dump(tasks_data, Dumper=Dumper))
 
     def flush(self) -> bool:
-        if self._tasks is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._tasks, self._next_id)
+        if self._tasks is not None and self.is_dirty:
+            self.__save_data(self._tasks)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_task_for_serialization(self, task: Task) -> dict[str, Any]:
         serializable_task = cast(dict[str, Any], task)
@@ -138,10 +120,10 @@ class TaskRepository:
         )
         return cast(Task, deserializable_task)
 
-    def save_new_task(self, task: Task) -> int:
+    def save_new_task(self, task: Task) -> EntityId:
         self.is_dirty = True
 
-        task["id"] = self.__get_next_id()
+        task["id"] = generate_entity_id()
 
         # Deduplicate tags
         if task["tags"] is not None:
@@ -159,9 +141,9 @@ class TaskRepository:
 
     def modify_task(
         self,
-        id: int,
-        cloned_from_id: Optional[int],
-        timespan_id: Optional[int],
+        id: EntityId,
+        cloned_from_id: Optional[EntityId],
+        timespan_id: Optional[EntityId],
         description: Optional[str],
         project: Optional[str],
         tags: Optional[list[str]],
@@ -265,7 +247,7 @@ class TaskRepository:
     def get_all_tasks(self) -> list[Task]:
         return deepcopy(self.tasks)
 
-    def get_task(self, id: int) -> Task:
+    def get_task(self, id: EntityId) -> Task:
         return deepcopy([task for task in self.tasks if task["id"] == id][0])
 
 

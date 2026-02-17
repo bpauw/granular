@@ -16,12 +16,12 @@ from granular import configuration, time
 from granular.model.event import Event
 from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class EventRepository:
     def __init__(self) -> None:
         self._events: Optional[list[Event]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -32,46 +32,27 @@ class EventRepository:
             raise ValueError()
         return self._events
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         events_data = load(configuration.DATA_EVENTS_PATH.read_text(), Loader=Loader)
-        self._next_id = int(events_data["next_id"])
         raw_events = events_data["events"]
         self._events = [
             self.__convert_event_for_deserialization(event) for event in raw_events
         ]
 
-    def __save_data(self, events: list[Event], next_id: int) -> None:
+    def __save_data(self, events: list[Event]) -> None:
         serializable_events = [
             self.__convert_event_for_serialization(event) for event in deepcopy(events)
         ]
         events_data = {
-            "next_id": next_id,
             "events": serializable_events,
         }
         configuration.DATA_EVENTS_PATH.write_text(dump(events_data, Dumper=Dumper))
 
     def flush(self) -> bool:
-        if self._events is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._events, self._next_id)
+        if self._events is not None and self.is_dirty:
+            self.__save_data(self._events)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_event_for_serialization(self, event: Event) -> dict[str, Any]:
         serializable_event = cast(dict[str, Any], event)
@@ -111,10 +92,10 @@ class EventRepository:
         )
         return cast(Event, deserializable_event)
 
-    def save_new_event(self, event: Event) -> int:
+    def save_new_event(self, event: Event) -> EntityId:
         self.is_dirty = True
 
-        event["id"] = self.__get_next_id()
+        event["id"] = generate_entity_id()
 
         # Deduplicate tags
         if event["tags"] is not None:
@@ -132,7 +113,7 @@ class EventRepository:
 
     def modify_event(
         self,
-        id: int,
+        id: EntityId,
         title: Optional[str],
         description: Optional[str],
         location: Optional[str],
@@ -216,7 +197,7 @@ class EventRepository:
     def get_all_events(self) -> list[Event]:
         return deepcopy(self.events)
 
-    def get_event(self, id: int) -> Event:
+    def get_event(self, id: EntityId) -> Event:
         return deepcopy([event for event in self.events if event["id"] == id][0])
 
     def find_event_by_ical(

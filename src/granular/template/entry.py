@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: MIT
 
+from granular.model.entity_id import UNSET_ENTITY_ID
 from granular.model.entity_type import EntityType
 from granular.model.entry import Entry
 from granular.time import now_utc
@@ -10,7 +11,7 @@ def get_entry_template() -> Entry:
     return {
         "id": None,
         "entity_type": EntityType.ENTRY,
-        "tracker_id": 0,  # Must be set
+        "tracker_id": UNSET_ENTITY_ID,  # Must be set
         "timestamp": now,
         "value": None,
         "project": None,

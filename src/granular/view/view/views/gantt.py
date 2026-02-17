@@ -7,6 +7,7 @@ from rich.console import Console, Group
 from rich.padding import Padding
 from rich.text import Text
 
+from granular.model.entity_id import EntityId
 from granular.color import COMPLETED_TASK_COLOR
 from granular.model.entry import Entry
 from granular.model.event import Event
@@ -1653,7 +1654,7 @@ def _format_task_left_column(
 
 
 def _build_task_rows(
-    timespan_id: Optional[int],
+    timespan_id: Optional[EntityId],
     tasks: list[Task],
     left_column_width: int,
     time_slots: list[pendulum.DateTime],

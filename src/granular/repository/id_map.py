@@ -13,6 +13,7 @@ except ImportError:
 from granular import configuration
 from granular.model.id_map import EntityType, IdMap, IdMapDict
 from granular.template.id_map import get_id_map_template
+from granular.model.entity_id import EntityId
 
 ENTITY_TYPES = get_args(EntityType)
 
@@ -44,7 +45,7 @@ class IdMapRepository:
         self.is_dirty = True
         self._id_map = get_id_map_template()
 
-    def associate_id(self, entity_type: str, entity_id: int) -> int:
+    def associate_id(self, entity_type: str, entity_id: EntityId) -> int:
         """
         Create a new synthetic id to associate with an entity id
         """
@@ -65,7 +66,7 @@ class IdMapRepository:
             f"{IdMapRepository.associate_id.__name__}: expected {EntityType.__name__} literals"
         )
 
-    def get_real_id(self, entity_type: str, synthetic_id: int) -> int:
+    def get_real_id(self, entity_type: str, synthetic_id: int) -> EntityId:
         """
         Get the entity id associated with a synthetic id
         """

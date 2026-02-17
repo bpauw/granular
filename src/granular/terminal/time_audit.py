@@ -6,6 +6,7 @@ import pendulum
 import typer
 
 from granular.color import get_random_color
+from granular.model.entity_id import EntityId
 from granular.model.entity_type import EntityType
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
@@ -250,7 +251,7 @@ def modify(
     # Process each time audit
     modified_time_audits = []
     for time_audit_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("time_audits", time_audit_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("time_audits", time_audit_id)
 
         # Handle tag modifications
         updated_tags = None
@@ -325,7 +326,7 @@ def delete(id: str) -> None:
     # Process each time audit
     deleted_time_audits = []
     for time_audit_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("time_audits", time_audit_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("time_audits", time_audit_id)
 
         TIME_AUDIT_REPO.modify_time_audit(
             real_id,

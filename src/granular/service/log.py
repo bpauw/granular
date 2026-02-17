@@ -5,6 +5,7 @@ from typing import Optional
 import pendulum
 
 from granular.color import get_random_color
+from granular.model.entity_id import EntityId
 from granular.model.log import Log
 from granular.repository.configuration import CONFIGURATION_REPO
 from granular.repository.context import CONTEXT_REPO
@@ -15,7 +16,7 @@ from granular.time import now_utc, python_to_pendulum_utc_optional
 def create_log_for_entity(
     text: str,
     reference_type: Optional[str],
-    reference_id: Optional[int],
+    reference_id: Optional[EntityId],
     entity_project: Optional[str],
     entity_tags: Optional[list[str]],
     timestamp: Optional[pendulum.DateTime] = None,

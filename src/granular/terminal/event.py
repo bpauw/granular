@@ -7,6 +7,7 @@ import pendulum
 import typer
 
 from granular.color import get_random_color
+from granular.model.entity_id import EntityId
 from granular.model.entity_type import EntityType
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
@@ -228,7 +229,7 @@ def modify(
     # Process each event
     modified_events = []
     for event_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("events", event_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("events", event_id)
 
         # Handle tag modifications
         updated_tags = None
@@ -303,7 +304,7 @@ def delete(id: str) -> None:
     # Process each event
     deleted_events = []
     for event_id in ids:
-        real_id: int = ID_MAP_REPO.get_real_id("events", event_id)
+        real_id: EntityId = ID_MAP_REPO.get_real_id("events", event_id)
 
         EVENT_REPO.modify_event(
             real_id,
@@ -439,7 +440,7 @@ def sync_ics() -> None:
 
                     # Update existing event (excluding deleted and created)
                     EVENT_REPO.modify_event(
-                        cast(int, existing_event["id"]),
+                        cast(EntityId, existing_event["id"]),
                         ical_event.summary,
                         ical_event.description,
                         ical_event.location,

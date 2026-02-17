@@ -11,6 +11,7 @@ from granular.color import (
     TIME_AUDIT_META_COLOR,
 )
 from granular.id_map import clear_id_map_if_required
+from granular.model.entity_id import EntityId
 from granular.model.entry import Entry
 from granular.model.event import Event
 from granular.model.log import Log
@@ -261,7 +262,7 @@ def task(
     from granular.repository.id_map import ID_MAP_REPO
     from granular.view.view.views.task import single_task_view
 
-    real_task_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+    real_task_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
 
     task_obj = TASK_REPO.get_task(real_task_id)
     time_audits = TIME_AUDIT_REPO.get_all_time_audits()
@@ -349,7 +350,7 @@ def time_audits(
 
     # Filter by task_id if provided
     if task_id is not None:
-        real_task_id: int = ID_MAP_REPO.get_real_id("tasks", task_id)
+        real_task_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
         time_audits = [
             time_audit
             for time_audit in time_audits
@@ -447,7 +448,7 @@ def time_audit(
     from granular.repository.id_map import ID_MAP_REPO
     from granular.view.view.views.time_audit import single_time_audit_report
 
-    real_time_audit_id: int = ID_MAP_REPO.get_real_id("time_audits", time_audit_id)
+    real_time_audit_id: EntityId = ID_MAP_REPO.get_real_id("time_audits", time_audit_id)
 
     time_audit_obj = TIME_AUDIT_REPO.get_time_audit(real_time_audit_id)
     active_context = CONTEXT_REPO.get_active_context()
@@ -644,7 +645,7 @@ def event(
     from granular.repository.id_map import ID_MAP_REPO
     from granular.view.view.views.event import single_event_view
 
-    real_event_id: int = ID_MAP_REPO.get_real_id("events", event_id)
+    real_event_id: EntityId = ID_MAP_REPO.get_real_id("events", event_id)
 
     event_obj = EVENT_REPO.get_event(real_event_id)
     active_context = CONTEXT_REPO.get_active_context()
@@ -804,7 +805,7 @@ def timespan(
     from granular.repository.id_map import ID_MAP_REPO
     from granular.view.view.views.timespan import single_timespan_view
 
-    real_timespan_id: int = ID_MAP_REPO.get_real_id("timespans", timespan_id)
+    real_timespan_id: EntityId = ID_MAP_REPO.get_real_id("timespans", timespan_id)
 
     timespan_obj = TIMESPAN_REPO.get_timespan(real_timespan_id)
     active_context = CONTEXT_REPO.get_active_context()
@@ -828,7 +829,7 @@ def log(
     from granular.repository.id_map import ID_MAP_REPO
     from granular.view.view.views.log import single_log_report
 
-    real_log_id: int = ID_MAP_REPO.get_real_id("logs", log_id)
+    real_log_id: EntityId = ID_MAP_REPO.get_real_id("logs", log_id)
 
     log_obj = LOG_REPO.get_log(real_log_id)
     active_context = CONTEXT_REPO.get_active_context()
@@ -1150,7 +1151,7 @@ def note(
     from granular.repository.id_map import ID_MAP_REPO
     from granular.view.view.views.note import single_note_report
 
-    real_note_id: int = ID_MAP_REPO.get_real_id("notes", note_id)
+    real_note_id: EntityId = ID_MAP_REPO.get_real_id("notes", note_id)
 
     note_obj = NOTE_REPO.get_note(real_note_id)
     active_context = CONTEXT_REPO.get_active_context()
@@ -2783,17 +2784,17 @@ def story(
         )
 
     # Convert mapped IDs to real IDs for task, time_audit, and event anchors
-    real_task_ids: Optional[list[int]] = None
+    real_task_ids: Optional[list[EntityId]] = None
     if task is not None:
         real_task_ids = [ID_MAP_REPO.get_real_id("tasks", tid) for tid in task]
 
-    real_time_audit_ids: Optional[list[int]] = None
+    real_time_audit_ids: Optional[list[EntityId]] = None
     if time_audit is not None:
         real_time_audit_ids = [
             ID_MAP_REPO.get_real_id("time_audits", taid) for taid in time_audit
         ]
 
-    real_event_ids: Optional[list[int]] = None
+    real_event_ids: Optional[list[EntityId]] = None
     if event is not None:
         real_event_ids = [ID_MAP_REPO.get_real_id("events", eid) for eid in event]
 
@@ -3154,7 +3155,7 @@ def tracker_summary(
     active_context = CONTEXT_REPO.get_active_context()
     active_context_name = cast(str, active_context["name"])
 
-    real_tracker_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+    real_tracker_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
     tracker = TRACKER_REPO.get_tracker(real_tracker_id)
     entries = ENTRY_REPO.get_entries_for_tracker(real_tracker_id)
 
@@ -3255,7 +3256,7 @@ def tracker(
     active_context = CONTEXT_REPO.get_active_context()
     active_context_name = cast(str, active_context["name"])
 
-    real_tracker_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+    real_tracker_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
     tracker_obj = TRACKER_REPO.get_tracker(real_tracker_id)
 
     clear_id_map_if_required()
@@ -3293,7 +3294,7 @@ def entries(
     active_context = CONTEXT_REPO.get_active_context()
     active_context_name = cast(str, active_context["name"])
 
-    real_tracker_id: int = ID_MAP_REPO.get_real_id("trackers", tracker_id)
+    real_tracker_id: EntityId = ID_MAP_REPO.get_real_id("trackers", tracker_id)
     tracker_obj = TRACKER_REPO.get_tracker(real_tracker_id)
     entries_list = ENTRY_REPO.get_entries_for_tracker(real_tracker_id)
 

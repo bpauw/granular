@@ -2,6 +2,8 @@
 
 from typing import cast
 
+from granular.model.entity_id import EntityId
+
 import pendulum
 from rich import box
 from rich.console import Console
@@ -41,7 +43,7 @@ def events_view(
             column_value = ""
             if column == "id":
                 column_value = str(
-                    ID_MAP_REPO.associate_id("events", cast(int, event["id"]))
+                    ID_MAP_REPO.associate_id("events", cast(EntityId, event["id"]))
                 )
             elif column == "tags":
                 column_value = format_tags(event["tags"])
@@ -79,7 +81,7 @@ def single_event_view(active_context: str, event: Event) -> None:
 
     event_table.add_row(
         "id",
-        str(ID_MAP_REPO.associate_id("events", cast(int, event["id"]))),
+        str(ID_MAP_REPO.associate_id("events", cast(EntityId, event["id"]))),
     )
     event_table.add_row("title", event["title"])
     event_table.add_row("description", event["description"])

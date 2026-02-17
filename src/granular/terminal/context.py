@@ -4,6 +4,7 @@ from typing import Annotated, Optional, cast
 
 import typer
 
+from granular.model.entity_id import EntityId
 from granular.repository.configuration import (
     CONFIGURATION_REPO,
 )
@@ -89,14 +90,14 @@ def activate(
 
     # Get the context by name to verify it exists
     context_to_activate = CONTEXT_REPO.get_context_by_name(name)
-    context_id = cast(int, context_to_activate["id"])
+    context_id = cast(EntityId, context_to_activate["id"])
 
     # First, deactivate all contexts
     all_contexts = CONTEXT_REPO.get_all_contexts()
     for context in all_contexts:
         if context["active"]:
             CONTEXT_REPO.modify_context(
-                id=cast(int, context["id"]),
+                id=cast(EntityId, context["id"]),
                 new_name=None,
                 active=False,
                 auto_added_tags=None,

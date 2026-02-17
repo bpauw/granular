@@ -13,6 +13,7 @@ except ImportError:
 from granular import configuration
 from granular import state as app_state
 from granular.migrate import migrate
+from granular.model.entity_id import generate_entity_id
 from granular.model.id_map import IdMap
 from granular.repository.configuration import CONFIGURATION_REPO
 from granular.template.id_map import get_id_map_template
@@ -65,15 +66,15 @@ def __ensure_data_files() -> None:
         configuration.DATA_MIGRATE_PATH.write_text(dump(migrate, Dumper=Dumper))
     if not configuration.DATA_TASKS_PATH.is_file():
         configuration.DATA_TASKS_PATH.touch()
-        tasks: dict[str, Any] = {"next_id": 1, "tasks": []}
+        tasks: dict[str, Any] = {"tasks": []}
         configuration.DATA_TASKS_PATH.write_text(dump(tasks, Dumper=Dumper))
     if not configuration.DATA_TIME_AUDIT_PATH.is_file():
         configuration.DATA_TIME_AUDIT_PATH.touch()
-        time_audits: dict[str, Any] = {"next_id": 1, "time_audits": []}
+        time_audits: dict[str, Any] = {"time_audits": []}
         configuration.DATA_TIME_AUDIT_PATH.write_text(dump(time_audits, Dumper=Dumper))
     if not configuration.DATA_EVENTS_PATH.is_file():
         configuration.DATA_EVENTS_PATH.touch()
-        events: dict[str, Any] = {"next_id": 1, "events": []}
+        events: dict[str, Any] = {"events": []}
         configuration.DATA_EVENTS_PATH.write_text(dump(events, Dumper=Dumper))
     if not configuration.DATA_CUSTOM_VIEWS_PATH.is_file():
         configuration.DATA_CUSTOM_VIEWS_PATH.touch()
@@ -84,10 +85,9 @@ def __ensure_data_files() -> None:
     if not configuration.DATA_CONTEXT_PATH.is_file():
         configuration.DATA_CONTEXT_PATH.touch()
         contexts: dict[str, Any] = {
-            "next_id": 2,
             "contexts": [
                 {
-                    "id": 1,
+                    "id": generate_entity_id(),
                     "name": "default",
                     "active": True,
                     "auto_added_tags": None,
@@ -106,15 +106,15 @@ def __ensure_data_files() -> None:
         configuration.DATA_PROJECTS_PATH.write_text(dump(projects, Dumper=Dumper))
     if not configuration.DATA_TIMESPANS_PATH.is_file():
         configuration.DATA_TIMESPANS_PATH.touch()
-        timespans: dict[str, Any] = {"next_id": 1, "timespans": []}
+        timespans: dict[str, Any] = {"timespans": []}
         configuration.DATA_TIMESPANS_PATH.write_text(dump(timespans, Dumper=Dumper))
     if not configuration.DATA_NOTES_PATH.is_file():
         configuration.DATA_NOTES_PATH.touch()
-        notes: dict[str, Any] = {"next_id": 1, "notes": []}
+        notes: dict[str, Any] = {"notes": []}
         configuration.DATA_NOTES_PATH.write_text(dump(notes, Dumper=Dumper))
     if not configuration.DATA_LOGS_PATH.is_file():
         configuration.DATA_LOGS_PATH.touch()
-        logs: dict[str, Any] = {"next_id": 1, "logs": []}
+        logs: dict[str, Any] = {"logs": []}
         configuration.DATA_LOGS_PATH.write_text(dump(logs, Dumper=Dumper))
     if not configuration.DATA_ID_MAP_PATH.is_file():
         configuration.DATA_ID_MAP_PATH.touch()
@@ -122,11 +122,11 @@ def __ensure_data_files() -> None:
         configuration.DATA_ID_MAP_PATH.write_text(dump(id_map, Dumper=Dumper))
     if not configuration.DATA_TRACKERS_PATH.is_file():
         configuration.DATA_TRACKERS_PATH.touch()
-        trackers: dict[str, Any] = {"next_id": 1, "trackers": []}
+        trackers: dict[str, Any] = {"trackers": []}
         configuration.DATA_TRACKERS_PATH.write_text(dump(trackers, Dumper=Dumper))
     if not configuration.DATA_ENTRIES_PATH.is_file():
         configuration.DATA_ENTRIES_PATH.touch()
-        entries: dict[str, Any] = {"next_id": 1, "entries": []}
+        entries: dict[str, Any] = {"entries": []}
         configuration.DATA_ENTRIES_PATH.write_text(dump(entries, Dumper=Dumper))
 
 

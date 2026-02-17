@@ -2,6 +2,8 @@
 
 from typing import Literal, TypedDict
 
+from granular.model.entity_id import EntityId
+
 EntityType = Literal[
     "tasks",
     "time_audits",
@@ -45,5 +47,5 @@ class IdMap(TypedDict):
 
 
 class IdMapMapping(TypedDict):
-    synthetic_to_real: dict[int, int]
-    real_to_synthetic: dict[int, int]
+    synthetic_to_real: dict[int, EntityId]
+    real_to_synthetic: dict[EntityId, int]

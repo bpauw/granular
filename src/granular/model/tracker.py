@@ -4,12 +4,14 @@ from typing import Literal, Optional, TypedDict
 
 import pendulum
 
+from granular.model.entity_id import EntityId
+
 EntryType = Literal["intra_day", "daily", "weekly", "monthly", "quarterly"]
 ValueType = Literal["checkin", "quantitative", "multi_select", "pips"]
 
 
 class Tracker(TypedDict):
-    id: Optional[int]
+    id: Optional[EntityId]
     entity_type: str  # "tracker"
     name: str  # e.g., "Water intake"
     description: Optional[str]  # Optional longer description

@@ -15,12 +15,12 @@ except ImportError:
 from granular import configuration, time
 from granular.model.entry import Entry
 from granular.repository.tag import TAG_REPO
+from granular.model.entity_id import EntityId, generate_entity_id
 
 
 class EntryRepository:
     def __init__(self) -> None:
         self._entries: Optional[list[Entry]] = None
-        self._next_id: Optional[int] = None
         self.is_dirty = False
 
     @property
@@ -31,43 +31,25 @@ class EntryRepository:
             raise ValueError()
         return self._entries
 
-    @property
-    def next_id(self) -> int:
-        if self._next_id is None:
-            self.__load_data()
-        if self._next_id is None:
-            raise ValueError()
-        return self._next_id
-
-    @next_id.setter
-    def next_id(self, value: int) -> None:
-        self._next_id = value
-
     def __load_data(self) -> None:
         entries_data = load(configuration.DATA_ENTRIES_PATH.read_text(), Loader=Loader)
-        self._next_id = int(entries_data["next_id"])
         raw_entries = entries_data["entries"]
         self._entries = [
             self.__convert_entry_for_deserialization(entry) for entry in raw_entries
         ]
 
-    def __save_data(self, entries: list[Entry], next_id: int) -> None:
+    def __save_data(self, entries: list[Entry]) -> None:
         serializable_entries = [
             self.__convert_entry_for_serialization(entry) for entry in deepcopy(entries)
         ]
-        entries_data = {"next_id": next_id, "entries": serializable_entries}
+        entries_data = {"entries": serializable_entries}
         configuration.DATA_ENTRIES_PATH.write_text(dump(entries_data, Dumper=Dumper))
 
     def flush(self) -> bool:
-        if self._entries is not None and self._next_id is not None and self.is_dirty:
-            self.__save_data(self._entries, self._next_id)
+        if self._entries is not None and self.is_dirty:
+            self.__save_data(self._entries)
             return True
         return False
-
-    def __get_next_id(self) -> int:
-        return_id = self.next_id
-        self.next_id += 1
-        return return_id
 
     def __convert_entry_for_serialization(self, entry: Entry) -> dict[str, Any]:
         serializable_entry = cast(dict[str, Any], entry)
@@ -101,10 +83,10 @@ class EntryRepository:
         )
         return cast(Entry, deserializable_entry)
 
-    def save_new_entry(self, entry: Entry) -> int:
+    def save_new_entry(self, entry: Entry) -> EntityId:
         self.is_dirty = True
 
-        entry["id"] = self.__get_next_id()
+        entry["id"] = generate_entity_id()
 
         # Deduplicate tags
         if entry["tags"] is not None:
@@ -120,8 +102,8 @@ class EntryRepository:
 
     def modify_entry(
         self,
-        id: int,
-        tracker_id: Optional[int],
+        id: EntityId,
+        tracker_id: Optional[EntityId],
         timestamp: Optional[pendulum.DateTime],
         value: Optional[Union[int, float, str]],
         project: Optional[str],
@@ -171,10 +153,10 @@ class EntryRepository:
     def get_all_entries(self) -> list[Entry]:
         return deepcopy(self.entries)
 
-    def get_entry(self, id: int) -> Entry:
+    def get_entry(self, id: EntityId) -> Entry:
         return deepcopy([entry for entry in self.entries if entry["id"] == id][0])
 
-    def get_entries_for_tracker(self, tracker_id: int) -> list[Entry]:
+    def get_entries_for_tracker(self, tracker_id: EntityId) -> list[Entry]:
         return deepcopy(
             [entry for entry in self.entries if entry["tracker_id"] == tracker_id]
         )
