@@ -13,7 +13,7 @@ class Context(TypedDict):
     name: Optional[str]
     active: Optional[bool]
     auto_added_tags: Optional[list[str]]
-    auto_added_project: Optional[str]
+    auto_added_projects: Optional[list[str]]
     filter: Optional[Filters]
     default_note_folder: NotRequired[Optional[str]]
     created: pendulum.DateTime

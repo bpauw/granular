@@ -31,8 +31,8 @@ app = typer.Typer(cls=ContextAwareTyperGroup, no_args_is_help=True)
 
 @app.command("add, a")
 def add(
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
@@ -134,16 +134,19 @@ def add(
         else:
             note_tags += tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    note_project = project
-    if note_project is None and active_context["auto_added_project"] is not None:
-        note_project = active_context["auto_added_project"]
+    # Determine projects: merge auto_added_projects from context with provided projects
+    note_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if note_projects is None:
+            note_projects = projects
+        else:
+            note_projects += projects
 
     note = get_note_template()
     note["reference_id"] = reference_id
     note["reference_type"] = reference_type
     note["timestamp"] = python_to_pendulum_utc_optional(timestamp)
-    note["project"] = note_project
+    note["projects"] = note_projects
     note["tags"] = note_tags
     note["text"] = text
     note["color"] = color
@@ -190,13 +193,22 @@ def add(
 @app.command("modify, m", no_args_is_help=True)
 def modify(
     id: str,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
-            help="valid input: project.subproject",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -260,7 +272,9 @@ def modify(
     remove_timestamp: Annotated[
         bool, typer.Option("--remove-timestamp", "-rtms")
     ] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rtgs")] = False,
     remove_deleted: Annotated[bool, typer.Option("--remove-deleted", "-rdel")] = False,
     remove_text: Annotated[bool, typer.Option("--remove-text", "-rtx")] = False,
@@ -356,6 +370,20 @@ def modify(
                 if text is None:
                     typer.echo("Text editing cancelled")
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            note = NOTE_REPO.get_note(real_id)
+            current_projects = note["projects"] if note["projects"] is not None else []
+            updated_projects = list(current_projects)
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         # Handle remove_reference flag
         remove_reference_id = remove_reference
         remove_reference_type = remove_reference
@@ -367,7 +395,7 @@ def modify(
             timestamp,
             deleted,
             updated_tags,
-            project,
+            updated_projects,
             text,
             color,
             remove_reference_id,
@@ -375,7 +403,7 @@ def modify(
             remove_timestamp,
             remove_deleted,
             remove_tags,
-            remove_project,
+            remove_projects,
             remove_text,
             remove_color,
         )
@@ -421,7 +449,7 @@ def delete(id: str) -> None:
             None,  # timestamp
             now_utc(),  # deleted
             None,  # tags
-            None,  # project
+            None,  # projects
             None,  # text
             None,  # color
             False,  # remove_reference_id
@@ -429,7 +457,7 @@ def delete(id: str) -> None:
             False,  # remove_timestamp
             False,  # remove_deleted
             False,  # remove_tags
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_text
             False,  # remove_color
         )

@@ -47,8 +47,8 @@ app = typer.Typer(cls=ContextAwareTyperGroup, no_args_is_help=True)
 @app.command("add, a", no_args_is_help=True)
 def add(
     description: str,
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
@@ -124,10 +124,13 @@ def add(
         else:
             task_tags += tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    task_project = project
-    if task_project is None and active_context["auto_added_project"] is not None:
-        task_project = active_context["auto_added_project"]
+    # Determine projects: merge context auto_added_projects with provided projects
+    entity_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if entity_projects is None:
+            entity_projects = projects
+        else:
+            entity_projects += projects
 
     # Determine color: use provided color, or random if config enabled
     task_color = color
@@ -136,7 +139,7 @@ def add(
 
     task = get_task_template()
     task["description"] = description
-    task["project"] = task_project
+    task["projects"] = entity_projects
     task["tags"] = task_tags
     task["priority"] = priority
     task["color"] = task_color
@@ -176,13 +179,22 @@ def modify(
     ] = None,
     timespan_id: Annotated[Optional[int], typer.Option("--timespan-id", "-ts")] = None,
     description: Annotated[Optional[str], typer.Option("--description", "-d")] = None,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
-            help="valid input: project.subproject",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -290,7 +302,9 @@ def modify(
     remove_description: Annotated[
         bool, typer.Option("--remove-description", "-rd")
     ] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rtgs")] = False,
     remove_priority: Annotated[bool, typer.Option("--remove-priority", "-rpr")] = False,
     remove_estimate: Annotated[bool, typer.Option("--remove-estimate", "-re")] = False,
@@ -345,6 +359,24 @@ def modify(
             # Set to None if empty, otherwise keep the list
             updated_tags = updated_tags if len(updated_tags) > 0 else None
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            task = TASK_REPO.get_task(real_id)
+            current_projects = task["projects"] if task["projects"] is not None else []
+            updated_projects = list(current_projects)
+
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+
+            # Set to None if empty, otherwise keep the list
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         real_cloned_from_id: Optional[EntityId] = (
             ID_MAP_REPO.get_real_id("tasks", cloned_from_id)
             if cloned_from_id is not None
@@ -361,7 +393,7 @@ def modify(
             real_cloned_from_id,
             real_timespan_id,
             description,
-            project,
+            updated_projects,
             updated_tags,
             priority,
             color,
@@ -376,7 +408,7 @@ def modify(
             remove_cloned_from_id,
             remove_timespan_id,
             remove_description,
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_priority,
             remove_color,
@@ -430,7 +462,7 @@ def complete(id: str) -> None:
             None,  # cloned_from_id
             None,  # timespan_id
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # priority
             None,  # color
@@ -445,7 +477,7 @@ def complete(id: str) -> None:
             False,  # remove_cloned_from_id
             False,  # remove_timespan_id
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_priority
             False,  # remove_color
@@ -499,7 +531,7 @@ def not_complete(id: str) -> None:
             None,  # cloned_from_id
             None,  # timespan_id
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # priority
             None,  # color
@@ -514,7 +546,7 @@ def not_complete(id: str) -> None:
             False,  # remove_cloned_from_id
             False,  # remove_timespan_id
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_priority
             False,  # remove_color
@@ -570,7 +602,7 @@ def cancel(id: str) -> None:
             None,  # cloned_from_id
             None,  # timespan_id
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # priority
             None,  # color
@@ -585,7 +617,7 @@ def cancel(id: str) -> None:
             False,  # remove_cloned_from_id
             False,  # remove_timespan_id
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_priority
             False,  # remove_color
@@ -639,7 +671,7 @@ def delete(id: str) -> None:
             None,  # cloned_from_id
             None,  # timespan_id
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # priority
             None,  # color
@@ -654,7 +686,7 @@ def delete(id: str) -> None:
             False,  # remove_cloned_from_id
             False,  # remove_timespan_id
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_priority
             False,  # remove_color
@@ -726,7 +758,7 @@ def clone(
     cloned_task["cloned_from_id"] = real_id
     cloned_task["timespan_id"] = source_task["timespan_id"]
     cloned_task["description"] = source_task["description"]
-    cloned_task["project"] = source_task["project"]
+    cloned_task["projects"] = source_task["projects"]
     cloned_task["tags"] = source_task["tags"]
     cloned_task["priority"] = source_task["priority"]
     cloned_task["estimate"] = source_task["estimate"]
@@ -816,17 +848,25 @@ def track(
     if config["random_color_for_time_audits"]:
         time_audit_color = get_random_color()
 
-    # Determine project: use task project if it exists, otherwise use context auto_added_project
-    time_audit_project = task["project"]
-    if time_audit_project is None and active_context["auto_added_project"] is not None:
-        time_audit_project = active_context["auto_added_project"]
+    # Determine projects: merge task projects with context auto_added_projects
+    time_audit_projects = task["projects"]
+    if active_context["auto_added_projects"] is not None:
+        if time_audit_projects is None:
+            time_audit_projects = active_context["auto_added_projects"]
+        else:
+            # Deduplicate projects: add context projects that aren't already in task projects
+            combined_projects = list(time_audit_projects)
+            for proj in active_context["auto_added_projects"]:
+                if proj not in combined_projects:
+                    combined_projects.append(proj)
+            time_audit_projects = combined_projects
 
     # Create new time audit
     time_audit = get_time_audit_template()
     time_audit["description"] = (
         description if description is not None else task["description"]
     )
-    time_audit["project"] = time_audit_project
+    time_audit["projects"] = time_audit_projects
     time_audit["tags"] = time_audit_tags
     time_audit["color"] = time_audit_color
     time_audit["start"] = current_time
@@ -893,7 +933,7 @@ def log(
         text=text,
         reference_type=EntityType.TASK,
         reference_id=real_id,
-        entity_project=task["project"],
+        entity_projects=task["projects"],
         entity_tags=task["tags"],
         timestamp=timestamp,
         add_tags=add_tags,
@@ -987,7 +1027,7 @@ def note(
     # Create the note
     note_entry = get_note_template()
     note_entry["text"] = text
-    note_entry["project"] = task["project"]
+    note_entry["projects"] = task["projects"]
     note_entry["tags"] = final_tags
     note_entry["timestamp"] = (
         python_to_pendulum_utc_optional(timestamp)
@@ -1058,7 +1098,7 @@ def color() -> None:
             None,  # cloned_from_id
             None,  # timespan_id
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # priority
             get_random_color(),  # color
@@ -1073,7 +1113,7 @@ def color() -> None:
             False,  # remove_cloned_from_id
             False,  # remove_timespan_id
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_priority
             False,  # remove_color

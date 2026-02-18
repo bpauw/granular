@@ -46,6 +46,13 @@ class ProjectRepository:
             self.is_dirty = True
             self.projects.add(project)
 
+    def add_projects(self, projects: list[str]) -> None:
+        """Add multiple projects at once. Efficient for CRUD operations."""
+        for project in projects:
+            if project not in self.projects:
+                self.is_dirty = True
+                self.projects.add(project)
+
     def remove_project(self, project: str) -> None:
         if project in self.projects:
             self.is_dirty = True

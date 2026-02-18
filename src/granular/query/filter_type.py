@@ -14,3 +14,5 @@ class FilterType(StrEnum):
     DATE = "date"
     TAG = "tag"
     TAG_REGEX = "tag_regex"
+    PROJECT = "project"
+    PROJECT_REGEX = "project_regex"

@@ -14,6 +14,7 @@ except ImportError:
 
 from granular import configuration, time
 from granular.model.log import Log
+from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
 from granular.model.entity_id import EntityId, generate_entity_id
 
@@ -92,9 +93,11 @@ class LogRepository:
 
         self.logs.append(log)
 
-        # Update tag cache (additive only)
+        # Update tag and project caches (additive only)
         if log["tags"] is not None:
             TAG_REPO.add_tags(log["tags"])
+        if log["projects"] is not None:
+            PROJECT_REPO.add_projects(log["projects"])
 
         return log["id"]
 
@@ -105,7 +108,7 @@ class LogRepository:
         reference_type: Optional[str],
         timestamp: Optional[pendulum.DateTime],
         text: Optional[str],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         color: Optional[str],
         deleted: Optional[pendulum.DateTime],
@@ -113,7 +116,7 @@ class LogRepository:
         remove_reference_type: bool,
         remove_timestamp: bool,
         remove_text: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_color: bool,
         remove_deleted: bool,
@@ -132,8 +135,10 @@ class LogRepository:
             log["timestamp"] = timestamp
         if text is not None:
             log["text"] = text
-        if project is not None:
-            log["project"] = project
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            log["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -152,8 +157,8 @@ class LogRepository:
             log["timestamp"] = None
         if remove_text:
             log["text"] = None
-        if remove_project:
-            log["project"] = None
+        if remove_projects:
+            log["projects"] = None
         if remove_tags:
             log["tags"] = None
         if remove_color:

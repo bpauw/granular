@@ -13,7 +13,7 @@ class Task(TypedDict):
     cloned_from_id: Optional[EntityId]
     timespan_id: Optional[EntityId]
     description: Optional[str]
-    project: Optional[str]
+    projects: Optional[list[str]]
     tags: Optional[list[str]]
     priority: Optional[int]
     estimate: Optional[pendulum.Duration]

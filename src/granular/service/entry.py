@@ -169,7 +169,9 @@ def create_entry_for_tracker(
     entry["value"] = value
 
     # Inherit from tracker
-    entry["project"] = tracker["project"]
+    entry_projects = tracker["projects"] if tracker["projects"] is not None else []
+    entry_projects = list(entry_projects)
+    entry["projects"] = entry_projects if len(entry_projects) > 0 else None
     entry["color"] = tracker["color"]
 
     # Handle tags: inherit from tracker and add additional tags

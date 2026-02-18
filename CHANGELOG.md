@@ -1,5 +1,28 @@
 # Changelog
 
+## Version 0.5.0-alpha
+
+### New
+
+- Entities now support multiple projects — the `project` field has been replaced with `projects` (a list), bringing project handling fully in line with how tags work
+- Added `--add-project` / `-ap` and `--remove-project` / `-rp` flags to all entity modify commands for granular project list management, plus `--remove-projects` / `-rpjs` to clear all projects
+- Added `Project` and `ProjectRegex` filter types to the filter DSL for filtering entities by project list membership
+- Added data migration (migration 4) that converts all existing `project` fields to `projects` lists across entity files, contexts, and custom view filters
+
+### Updated
+
+- The `--project` / `-p` flag on all add commands is now repeatable, allowing multiple projects at creation time (e.g., `gran task add "My task" -p proj1 -p proj2`)
+- Context auto-added projects are now a list (`auto_added_projects`) and merge with explicitly provided projects instead of being overridden
+- Project sync now indexes projects from all 8 entity types (previously only tasks, events, and time audits)
+- All entity repositories now register new projects with the project index on save and modify (previously only tasks, events, and time audits did this)
+- View commands display projects as comma-separated lists using the same formatting as tags
+- The `--project` / `-p` filter on view commands now checks list membership instead of exact string equality
+- Search now scans all projects in the list when `--search-in-project` is enabled
+
+### Fixed
+
+- Notes, logs, timespans, trackers, and entries now properly register projects with the project index (previously only tasks, events, and time audits did)
+
 ## Version 0.4.0-alpha
 
 ### New

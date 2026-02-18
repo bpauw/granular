@@ -50,6 +50,10 @@ def filter_factory(filter: Filter) -> "Predicate":
             return Tag(cast(ValueFilter, filter))
         case FilterType.TAG_REGEX:
             return TagRegex(cast(ValueFilter, filter))
+        case FilterType.PROJECT:
+            return Project(cast(ValueFilter, filter))
+        case FilterType.PROJECT_REGEX:
+            return ProjectRegex(cast(ValueFilter, filter))
     raise Exception()
 
 
@@ -241,6 +245,33 @@ class TagRegex(Predicate):
                 if any(pattern.search(tag) for tag in item["tags"]):
                     filtered_items.append(item)
 
+        return filtered_items
+
+
+class Project(Predicate):
+    def __init__(self, project_filter: ValueFilter) -> None:
+        self.project_filter = project_filter
+
+    def filter(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        filtered_items = []
+        for item in items:
+            if "projects" in item and item["projects"] is not None:
+                if self.project_filter["filter"] in item["projects"]:
+                    filtered_items.append(item)
+        return filtered_items
+
+
+class ProjectRegex(Predicate):
+    def __init__(self, project_filter: ValueFilter) -> None:
+        self.project_filter = project_filter
+
+    def filter(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        filtered_items = []
+        pattern = re.compile(self.project_filter["filter"])
+        for item in items:
+            if "projects" in item and item["projects"] is not None:
+                if any(pattern.search(p) for p in item["projects"]):
+                    filtered_items.append(item)
         return filtered_items
 
 

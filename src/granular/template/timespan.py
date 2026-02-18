@@ -16,7 +16,7 @@ def get_timespan_template() -> Timespan:
         "deleted": None,
         "start": None,
         "end": None,
-        "project": None,
+        "projects": None,
         "tags": None,
         "color": None,
         "completed": None,

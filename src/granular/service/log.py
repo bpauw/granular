@@ -17,7 +17,7 @@ def create_log_for_entity(
     text: str,
     reference_type: Optional[str],
     reference_id: Optional[EntityId],
-    entity_project: Optional[str],
+    entity_projects: Optional[list[str]],
     entity_tags: Optional[list[str]],
     timestamp: Optional[pendulum.DateTime] = None,
     add_tags: Optional[list[str]] = None,
@@ -33,7 +33,7 @@ def create_log_for_entity(
         text: Log text content
         reference_type: Type of entity (EntityType.TASK, etc.) or None for standalone log
         reference_id: ID of the referenced entity or None for standalone log
-        entity_project: Project from the entity
+        entity_projects: Projects from the entity
         entity_tags: Tags from the entity
         timestamp: Optional timestamp (defaults to now)
         add_tags: Additional tags to add
@@ -72,7 +72,7 @@ def create_log_for_entity(
     # Create the log entry
     log_entry = get_log_template()
     log_entry["text"] = text
-    log_entry["project"] = entity_project
+    log_entry["projects"] = entity_projects
     log_entry["tags"] = final_tags
     log_entry["color"] = log_color
     log_entry["timestamp"] = (

@@ -484,16 +484,16 @@ class StoryDataCollector:
 
     def collect_for_projects(self, projects: list[str]) -> dict:
         """
-        Collect all entities that belong to the specified projects (exact match).
+        Collect all entities that belong to the specified projects.
 
-        Collects all entities where project = X:
+        Collects all entities where any of the entity's projects match:
         - Tasks
         - Time audits (directly tagged OR via task relationship)
         - Events
         - Timespans
         - Logs (directly tagged OR via reference to project entities)
         - Notes (directly tagged OR via reference to project entities)
-        - Tracker entries (where entry OR tracker has project = X)
+        - Tracker entries (where entry OR tracker has matching project)
         """
         result_tasks: list[Task] = []
         result_time_audits: list[TimeAudit] = []
@@ -511,14 +511,14 @@ class StoryDataCollector:
         for project in projects:
             # Tasks with this project
             for task in self.all_tasks:
-                if task["project"] == project:
+                if task["projects"] is not None and project in task["projects"]:
                     result_tasks.append(task)
                     if task["id"] is not None:
                         project_task_ids.add(task["id"])
 
             # Time audits with this project (direct or via task)
             for ta in self.all_time_audits:
-                if ta["project"] == project:
+                if ta["projects"] is not None and project in ta["projects"]:
                     result_time_audits.append(ta)
                     if ta["id"] is not None:
                         project_time_audit_ids.add(ta["id"])
@@ -529,19 +529,19 @@ class StoryDataCollector:
 
             # Events with this project
             for event in self.all_events:
-                if event["project"] == project:
+                if event["projects"] is not None and project in event["projects"]:
                     result_events.append(event)
                     if event["id"] is not None:
                         project_event_ids.add(event["id"])
 
             # Timespans with this project
             for timespan in self.all_timespans:
-                if timespan["project"] == project:
+                if timespan["projects"] is not None and project in timespan["projects"]:
                     result_timespans.append(timespan)
 
             # Logs with this project or referencing project entities
             for log in self.all_logs:
-                if log["project"] == project:
+                if log["projects"] is not None and project in log["projects"]:
                     result_logs.append(log)
                 elif (
                     log["reference_type"] == "task"
@@ -561,7 +561,7 @@ class StoryDataCollector:
 
             # Notes with this project or referencing project entities
             for note in self.all_notes:
-                if note["project"] == project:
+                if note["projects"] is not None and project in note["projects"]:
                     result_notes.append(note)
                 elif (
                     note["reference_type"] == "task"
@@ -579,14 +579,16 @@ class StoryDataCollector:
                 ):
                     result_notes.append(note)
 
-            # Tracker entries where entry or tracker has project = X
+            # Tracker entries where entry or tracker has matching project
             project_tracker_ids = {
                 t["id"]
                 for t in self.all_trackers
-                if t["project"] == project and t["id"] is not None
+                if t["projects"] is not None
+                and project in t["projects"]
+                and t["id"] is not None
             }
             for entry in self.all_entries:
-                if entry["project"] == project:
+                if entry["projects"] is not None and project in entry["projects"]:
                     result_entries.append(entry)
                 elif entry["tracker_id"] in project_tracker_ids:
                     result_entries.append(entry)

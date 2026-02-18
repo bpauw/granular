@@ -27,8 +27,8 @@ app = typer.Typer(cls=ContextAwareTyperGroup, no_args_is_help=True)
 
 @app.command("add, a")
 def add(
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
@@ -102,10 +102,13 @@ def add(
         else:
             log_tags += tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    log_project = project
-    if log_project is None and active_context["auto_added_project"] is not None:
-        log_project = active_context["auto_added_project"]
+    # Determine projects: merge auto_added_projects from context with provided projects
+    log_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if log_projects is None:
+            log_projects = projects
+        else:
+            log_projects += projects
 
     # Open editor to get log text
     text = open_editor_for_text()
@@ -120,7 +123,7 @@ def add(
         text=text,
         reference_type=reference_type,
         reference_id=reference_id,
-        entity_project=log_project,
+        entity_projects=log_projects,
         entity_tags=log_tags,
         timestamp=timestamp,
         add_tags=None,  # Already merged above
@@ -143,13 +146,22 @@ def add(
 @app.command("modify, m", no_args_is_help=True)
 def modify(
     id: str,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
-            help="valid input: project.subproject",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -194,7 +206,9 @@ def modify(
             help="valid inputs: YYYY-MM-DD, (H)H:mm, today, yesterday, tomorrow, or day offset like 1, -1",
         ),
     ] = None,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rtgs")] = False,
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
     remove_timestamp: Annotated[
@@ -276,6 +290,20 @@ def modify(
             if text is None:
                 typer.echo("Text editing cancelled")
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            log = LOG_REPO.get_log(real_id)
+            current_projects = log["projects"] if log["projects"] is not None else []
+            updated_projects = list(current_projects)
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         # Handle remove_reference flag
         remove_reference_id = remove_reference
         remove_reference_type = remove_reference
@@ -286,7 +314,7 @@ def modify(
             reference_type,
             timestamp,
             text,
-            project,
+            updated_projects,
             updated_tags,
             color,
             deleted,
@@ -294,7 +322,7 @@ def modify(
             remove_reference_type,
             remove_timestamp,
             False,  # remove_text - not used since text is edited via editor
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_color,
             remove_deleted,

@@ -134,8 +134,8 @@ class TaskRepository:
         # Update tag and project caches
         if task["tags"] is not None:
             TAG_REPO.add_tags(task["tags"])
-        if task["project"] is not None:
-            PROJECT_REPO.add_project(task["project"])
+        if task["projects"] is not None:
+            PROJECT_REPO.add_projects(task["projects"])
 
         return task["id"]
 
@@ -145,7 +145,7 @@ class TaskRepository:
         cloned_from_id: Optional[EntityId],
         timespan_id: Optional[EntityId],
         description: Optional[str],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         priority: Optional[int],
         color: Optional[str],
@@ -160,7 +160,7 @@ class TaskRepository:
         remove_cloned_from_id: bool,
         remove_timespan_id: bool,
         remove_description: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_priority: bool,
         remove_color: bool,
@@ -184,9 +184,10 @@ class TaskRepository:
             task["timespan_id"] = timespan_id
         if description is not None:
             task["description"] = description
-        if project is not None:
-            task["project"] = project
-            PROJECT_REPO.add_project(project)
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            task["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -219,8 +220,8 @@ class TaskRepository:
             task["timespan_id"] = None
         if remove_description:
             task["description"] = None
-        if remove_project:
-            task["project"] = None
+        if remove_projects:
+            task["projects"] = None
         if remove_tags:
             task["tags"] = None
         if remove_priority:

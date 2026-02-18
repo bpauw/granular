@@ -116,8 +116,8 @@ class TimeAuditRepository:
         # Update tag and project caches (additive only)
         if time_audit["tags"] is not None:
             TAG_REPO.add_tags(time_audit["tags"])
-        if time_audit["project"] is not None:
-            PROJECT_REPO.add_project(time_audit["project"])
+        if time_audit["projects"] is not None:
+            PROJECT_REPO.add_projects(time_audit["projects"])
 
         return time_audit["id"]
 
@@ -125,7 +125,7 @@ class TimeAuditRepository:
         self,
         id: EntityId,
         description: Optional[str],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         color: Optional[str],
         start: Optional[pendulum.DateTime],
@@ -133,7 +133,7 @@ class TimeAuditRepository:
         task_id: Optional[EntityId],
         deleted: Optional[pendulum.DateTime],
         remove_description: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_color: bool,
         remove_start: bool,
@@ -150,9 +150,10 @@ class TimeAuditRepository:
         time_audit["updated"] = time.now_utc()
         if description is not None:
             time_audit["description"] = description
-        if project is not None:
-            time_audit["project"] = project
-            PROJECT_REPO.add_project(project)
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            time_audit["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -171,8 +172,8 @@ class TimeAuditRepository:
 
         if remove_description:
             time_audit["description"] = None
-        if remove_project:
-            time_audit["project"] = None
+        if remove_projects:
+            time_audit["projects"] = None
         if remove_tags:
             time_audit["tags"] = None
         if remove_color:

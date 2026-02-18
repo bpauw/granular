@@ -13,7 +13,7 @@ def get_event_template() -> Event:
         "title": None,
         "description": None,
         "location": None,
-        "project": None,
+        "projects": None,
         "tags": None,
         "color": None,
         "start": now,

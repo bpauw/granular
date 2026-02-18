@@ -15,7 +15,7 @@ def get_log_template() -> Log:
         "updated": now,
         "deleted": None,
         "tags": None,
-        "project": None,
+        "projects": None,
         "text": None,
         "color": None,
     }

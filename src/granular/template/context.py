@@ -11,7 +11,7 @@ def get_context_template() -> Context:
         "name": None,
         "active": False,
         "auto_added_tags": None,
-        "auto_added_project": None,
+        "auto_added_projects": None,
         "filter": None,
         "default_note_folder": None,
         "created": now,

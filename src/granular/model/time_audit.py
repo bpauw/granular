@@ -11,7 +11,7 @@ class TimeAudit(TypedDict):
     id: Optional[EntityId]
     entity_type: str
     description: Optional[str]
-    project: Optional[str]
+    projects: Optional[list[str]]
     tags: Optional[list[str]]
     color: Optional[str]
     start: Optional[pendulum.DateTime]

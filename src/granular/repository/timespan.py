@@ -14,6 +14,7 @@ except ImportError:
 
 from granular import configuration, time
 from granular.model.timespan import Timespan
+from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
 from granular.model.entity_id import EntityId, generate_entity_id
 
@@ -128,9 +129,11 @@ class TimespanRepository:
 
         self.timespans.append(timespan)
 
-        # Update tag cache (additive only)
+        # Update tag and project caches (additive only)
         if timespan["tags"] is not None:
             TAG_REPO.add_tags(timespan["tags"])
+        if timespan["projects"] is not None:
+            PROJECT_REPO.add_projects(timespan["projects"])
 
         return timespan["id"]
 
@@ -138,7 +141,7 @@ class TimespanRepository:
         self,
         id: EntityId,
         description: Optional[str],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         color: Optional[str],
         start: Optional[pendulum.DateTime],
@@ -148,7 +151,7 @@ class TimespanRepository:
         cancelled: Optional[pendulum.DateTime],
         deleted: Optional[pendulum.DateTime],
         remove_description: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_color: bool,
         remove_start: bool,
@@ -165,8 +168,10 @@ class TimespanRepository:
         timespan["updated"] = time.now_utc()
         if description is not None:
             timespan["description"] = description
-        if project is not None:
-            timespan["project"] = project
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            timespan["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -189,8 +194,8 @@ class TimespanRepository:
 
         if remove_description:
             timespan["description"] = None
-        if remove_project:
-            timespan["project"] = None
+        if remove_projects:
+            timespan["projects"] = None
         if remove_tags:
             timespan["tags"] = None
         if remove_color:

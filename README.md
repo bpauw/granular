@@ -50,6 +50,7 @@ Granular is a CLI application for managing tasks, time tracking, events, timespa
   - [Boolean Filters](#boolean-filters)
   - [Property Filters](#property-filters)
   - [Tag Filters](#tag-filters)
+  - [Project Filters](#project-filters)
 - [Date and Time Input](#date-and-time-input)
 - [ID Ranges](#id-ranges)
 - [Configuration](#configuration)
@@ -85,8 +86,8 @@ The CLI is invoked with the `gran` command.
 # Add your first task
 gran task add "Buy groceries" --tag shopping --due tomorrow
 
-# Add another task with a project and priority
-gran task add "Write report" --project work.reports --priority 2 --scheduled today
+# Add another task with projects and priority
+gran task add "Write report" -p work.reports -p writing --priority 2 --scheduled today
 
 # Start tracking time on a task
 gran task track 1
@@ -132,14 +133,14 @@ Granular manages eight types of entities:
 | **Tracker** | A habit or metric tracker with configurable frequency and value types |
 | **Entry** | A single data point recorded against a tracker |
 
-All entities support **projects** (hierarchical, dot-separated: `work.reports`), **tags**, and **colors**.
+All entities support **projects** (multiple, hierarchical, dot-separated: `work.reports`), **tags**, and **colors**. Each entity can belong to multiple projects simultaneously, just like tags.
 
 ### Contexts
 
 Contexts are named work environments that change how Granular behaves:
 
 - **Auto-added tags** — Tags automatically applied to new entities created in the context
-- **Auto-added project** — A project automatically set on new entities
+- **Auto-added projects** — Projects automatically applied to new entities created in the context (merged with any explicitly provided projects)
 - **Filters** — A filter automatically applied to all views, so you only see relevant data
 - **Default note folder** — Where external notes are saved by default
 
@@ -190,7 +191,7 @@ gran task color                          # Assign random colors to uncolored tas
 
 | Option | Short | Description |
 |---|---|---|
-| `--project` | `-p` | Project name (e.g., `work.reports`) |
+| `--project` | `-p` | Project name (repeatable for multiple projects, e.g., `-p work.reports -p writing`) |
 | `--tag` | `-t` | Tag (repeatable for multiple tags) |
 | `--priority` | `-pr` | Priority 1-5 (1 = highest) |
 | `--estimate` | `-e` | Time estimate in `HH:mm` format |
@@ -200,7 +201,18 @@ gran task color                          # Assign random colors to uncolored tas
 | `--color` | `-col` | Display color |
 | `--timespan-id` | `-ts` | Link to a timespan |
 
-**Task modify** supports all of the above plus `--remove-*` variants to clear fields (e.g., `--remove-project`, `--remove-due`), `--add-tag`/`--remove-tag` for tag management, and `--completed`/`--not-completed`/`--cancelled`/`--deleted` to set status timestamps directly.
+**Task modify options:**
+
+Task modify supports `--remove-*` variants to clear fields (e.g., `--remove-due`), `--add-tag`/`--remove-tag`/`--remove-tags` for tag management, `--add-project`/`--remove-project`/`--remove-projects` for project management, and `--completed`/`--not-completed`/`--cancelled`/`--deleted` to set status timestamps directly.
+
+| Option | Short | Description |
+|---|---|---|
+| `--add-project` | `-ap` | Add a project (repeatable, e.g., `-ap proj1 -ap proj2`) |
+| `--remove-project` | `-rp` | Remove a specific project (repeatable) |
+| `--remove-projects` | `-rpjs` | Clear all projects |
+| `--add-tag` | `-at` | Add a tag (repeatable) |
+| `--remove-tag` | `-rt` | Remove a specific tag (repeatable) |
+| `--remove-tags` | `-rts` | Clear all tags |
 
 ### Time Audits
 
@@ -220,7 +232,7 @@ gran audit color                         # Assign random colors to uncolored aud
 
 | Option | Short | Description |
 |---|---|---|
-| `--project` | `-p` | Project name |
+| `--project` | `-p` | Project name (repeatable for multiple projects) |
 | `--tag` | `-t` | Tag (repeatable) |
 | `--color` | `-col` | Display color |
 | `--start` | `-s` | Start time (defaults to now) |
@@ -246,7 +258,7 @@ gran event color                         # Assign random colors
 |---|---|---|
 | `--description` | `-d` | Event description |
 | `--location` | `-l` | Event location |
-| `--project` | `-p` | Project name |
+| `--project` | `-p` | Project name (repeatable for multiple projects) |
 | `--tag` | `-t` | Tag (repeatable) |
 | `--color` | `-col` | Display color |
 | `--start` | `-s` | Start time |
@@ -266,7 +278,7 @@ gran timespan delete <id>                   # Soft delete
 
 | Option | Short | Description |
 |---|---|---|
-| `--project` | `-p` | Project name |
+| `--project` | `-p` | Project name (repeatable for multiple projects) |
 | `--tag` | `-t` | Tag (repeatable) |
 | `--color` | `-col` | Display color |
 | `--start` | `-s` | Start date |
@@ -286,7 +298,7 @@ gran note delete <id>                    # Soft delete
 
 | Option | Short | Description |
 |---|---|---|
-| `--project` | `-p` | Project name |
+| `--project` | `-p` | Project name (repeatable for multiple projects) |
 | `--tag` | `-t` | Tag (repeatable) |
 | `--timestamp` | `-ts` | Timestamp for ordering |
 | `--color` | `-c` | Display color |
@@ -313,7 +325,7 @@ gran log delete <id>                     # Soft delete
 
 | Option | Short | Description |
 |---|---|---|
-| `--project` | `-p` | Project name |
+| `--project` | `-p` | Project name (repeatable for multiple projects) |
 | `--tag` | `-t` | Tag (repeatable) |
 | `--color` | `-col` | Display color |
 | `--timestamp` | `-ts` | Timestamp |
@@ -347,7 +359,7 @@ gran tracker entry-delete <entry_id>               # Delete an entry
 | `--scale-max` | | Maximum value for numeric multi_select |
 | `--option` | `-o` | Named option for multi_select (repeatable) |
 | `--description` | `-d` | Tracker description |
-| `--project` | `-p` | Project name |
+| `--project` | `-p` | Project name (repeatable for multiple projects) |
 | `--tag` | `-tg` | Tag (repeatable) |
 | `--color` | `-col` | Display color |
 
@@ -372,7 +384,7 @@ gran context activate <name>             # Activate a context
 | Option | Short | Description |
 |---|---|---|
 | `--auto-added-tag` | `-a` | Tags auto-applied to new entities (repeatable) |
-| `--auto-added-project` | `-p` | Project auto-set on new entities |
+| `--auto-added-project` | `-p` | Projects auto-applied to new entities (repeatable for multiple projects) |
 | `--default-note-folder` | `-dnf` | Default folder for external notes |
 
 ### Views
@@ -416,7 +428,7 @@ gran search <query> [options]
 |---|---|---|
 | `--search-in-description` | `-d` | Search in description/title/text (default: on) |
 | `--search-in-tags` | `-t` | Search in tags |
-| `--search-in-project` | `-p` | Search in project field |
+| `--search-in-project` | `-p` | Search in projects (matches against all projects in the list) |
 | `--tasks/--no-tasks` | | Include/exclude tasks (default: on) |
 | `--time-audits/--no-time-audits` | | Include/exclude time audits (default: on) |
 | `--events/--no-events` | | Include/exclude events (default: on) |
@@ -455,7 +467,7 @@ All view commands are under `gran view` (alias: `gran v`). Most list views suppo
 | `--tag-regex` | `-tr` | Filter by tag regex (repeatable) |
 | `--no-tag` | `-nt` | Exclude entities with these tags (repeatable) |
 | `--no-tag-regex` | `-ntr` | Exclude entities with tags matching regex |
-| `--project` | `-p` | Filter by project |
+| `--project` | `-p` | Filter by project (shows entities that have this project in their projects list) |
 | `--no-color` | | Disable entity color in rows |
 | `--no-wrap` | | Disable text wrapping |
 
@@ -644,6 +656,8 @@ Custom views let you compose multiple sub-views into a single named command. Def
 
 > **Migration note (v0.3.0):** If you are upgrading from a previous version that used `reports.yaml`, the file is automatically renamed to `custom-views.yaml` and the YAML key is updated to `custom_views` on first run. No manual action is required.
 
+> **Migration note (v0.5.0):** The `project` field on all entities has been replaced with `projects` (a list). Migration 4 automatically converts existing data. Any custom view filters using `filter_type: str` with `property: project` are automatically converted to the new `filter_type: project`. Custom view column lists should use `projects` instead of `project`.
+
 > **Migration note (v0.4.0):** Entity IDs have been converted from integers to UUIDs. If your custom views reference entities by ID (e.g., in `story` sub-views with `task`, `time_audit`, or `event` fields), you will need to update those IDs manually. After migration, an `id_migration_map.yaml` file is written to your data directory containing the mapping from old integer IDs to new UUIDs. Use this file to look up the new UUIDs for any entity IDs referenced in your `custom-views.yaml`.
 
 ### Defining Custom Views
@@ -658,7 +672,7 @@ custom_views:
         markdown: "## Tasks"
 
       - view_type: task
-        columns: [id, description, project, tags, priority, due]
+        columns: [id, description, projects, tags, priority, due]
         filter:
           filter_type: and
           predicates:
@@ -763,8 +777,8 @@ predicate:
 
 ```yaml
 filter_type: str
-property: project
-filter: "equals MyProject"
+property: description
+filter: "contains MyKeyword"
 ```
 
 Instructions: `equals`, `equals_no_case`, `contains`, `contains_no_case`
@@ -809,6 +823,22 @@ filter: "work"
 ```yaml
 filter_type: tag_regex
 filter: "^sprint-.*"
+```
+
+### Project Filters
+
+**Exact project match** — matches entities that have the given project in their projects list:
+
+```yaml
+filter_type: project
+filter: "work.reports"
+```
+
+**Regex project match** — matches entities where any project in the list matches the regex:
+
+```yaml
+filter_type: project_regex
+filter: "^work\\..*"
 ```
 
 ---
@@ -911,7 +941,7 @@ gran note add --external --folder work
 gran task note 1 --external --folder personal
 ```
 
-If `external_notes_by_default` is enabled, all notes will be created as external files. When `sync_note_frontmatter` is enabled, entity metadata (tags, project, references) is synced to YAML frontmatter in the markdown files.
+If `external_notes_by_default` is enabled, all notes will be created as external files. When `sync_note_frontmatter` is enabled, entity metadata (tags, projects, references) is synced to YAML frontmatter in the markdown files.
 
 ### iCal Sync
 
@@ -1037,6 +1067,7 @@ Current migrations:
 | 1 | Initial migration |
 | 2 | Rename `reports.yaml` to `custom-views.yaml` |
 | 3 | Convert all entity IDs from integers to UUID v4 strings |
+| 4 | Convert singular `project` field to plural `projects` list across all entities, contexts, and custom view filters |
 
 ### Global Options
 

@@ -43,6 +43,8 @@ def timespans_view(
                         "timespans", cast(EntityId, timespan["id"])
                     )
                 )
+            elif column == "projects":
+                column_value = format_tags(timespan["projects"])
             elif column == "tags":
                 column_value = format_tags(timespan["tags"])
             elif isinstance(timespan[column], pendulum.DateTime):  # type: ignore[literal-required]
@@ -78,7 +80,7 @@ def single_timespan_view(active_context: str, timespan: Timespan) -> None:
         str(ID_MAP_REPO.associate_id("timespans", cast(EntityId, timespan["id"]))),
     )
     timespan_table.add_row("description", timespan["description"])
-    timespan_table.add_row("project", timespan["project"])
+    timespan_table.add_row("projects", format_tags(timespan["projects"]))
     timespan_table.add_row("tags", format_tags(timespan["tags"]))
     timespan_table.add_row("color", timespan["color"])
     timespan_table.add_row(

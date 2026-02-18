@@ -82,8 +82,8 @@ def add(
         Optional[str],
         typer.Option("--description", "-d"),
     ] = None,
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
@@ -133,10 +133,13 @@ def add(
         else:
             tracker_tags = list(tracker_tags) + tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    tracker_project = project
-    if tracker_project is None and active_context["auto_added_project"] is not None:
-        tracker_project = active_context["auto_added_project"]
+    # Determine projects: merge auto_added_projects from context with provided projects
+    tracker_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if tracker_projects is None:
+            tracker_projects = projects
+        else:
+            tracker_projects += projects
 
     # Determine color: use provided color, or random if config enabled
     tracker_color = color
@@ -152,7 +155,7 @@ def add(
     tracker["scale_min"] = scale_min
     tracker["scale_max"] = scale_max
     tracker["options"] = options
-    tracker["project"] = tracker_project
+    tracker["projects"] = tracker_projects
     tracker["tags"] = tracker_tags
     tracker["color"] = tracker_color
 
@@ -197,12 +200,22 @@ def modify(
         Optional[list[str]],
         typer.Option("--option", "-o"),
     ] = None,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -233,7 +246,9 @@ def modify(
         bool, typer.Option("--remove-scale-max", "-rsmax")
     ] = False,
     remove_options: Annotated[bool, typer.Option("--remove-options", "-ro")] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rtgs")] = False,
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
 ) -> None:
@@ -268,6 +283,22 @@ def modify(
 
             updated_tags = updated_tags if len(updated_tags) > 0 else None
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            tracker = TRACKER_REPO.get_tracker(real_id)
+            current_projects = (
+                tracker["projects"] if tracker["projects"] is not None else []
+            )
+            updated_projects = list(current_projects)
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         TRACKER_REPO.modify_tracker(
             real_id,
             name,
@@ -278,7 +309,7 @@ def modify(
             scale_min,
             scale_max,
             options,
-            project,
+            updated_projects,
             updated_tags,
             color,
             None,  # archived
@@ -288,7 +319,7 @@ def modify(
             remove_scale_min,
             remove_scale_max,
             remove_options,
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_color,
             False,  # remove_archived
@@ -617,12 +648,22 @@ def entry_modify(
             help="New timestamp for entry",
         ),
     ] = None,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -643,7 +684,9 @@ def entry_modify(
     ] = None,
     color: Annotated[Optional[str], typer.Option("--color", "-col")] = None,
     remove_value: Annotated[bool, typer.Option("--remove-value", "-rv")] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rtgs")] = False,
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
 ) -> None:
@@ -696,17 +739,32 @@ def entry_modify(
 
             updated_tags = updated_tags if len(updated_tags) > 0 else None
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            current_projects = (
+                entry_obj["projects"] if entry_obj["projects"] is not None else []
+            )
+            updated_projects = list(current_projects)
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         ENTRY_REPO.modify_entry(
             real_id,
             None,  # tracker_id - not modifiable
             entry_timestamp,
             parsed_value,
-            project,
+            updated_projects,
             updated_tags,
             color,
             None,  # deleted
             remove_value,
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_color,
             False,  # remove_deleted
@@ -746,12 +804,12 @@ def entry_delete(
         None,  # tracker_id
         None,  # timestamp
         None,  # value
-        None,  # project
+        None,  # projects
         None,  # tags
         None,  # color
         now_utc(),  # deleted
         False,  # remove_value
-        False,  # remove_project
+        False,  # remove_projects
         False,  # remove_tags
         False,  # remove_color
         False,  # remove_deleted

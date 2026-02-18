@@ -29,7 +29,7 @@ def notes_report(
         "reference_type",
         "reference_id",
         "first_line",
-        "project",
+        "projects",
         "tags",
         "external_file_path",
     ],
@@ -68,6 +68,8 @@ def notes_report(
                     datetime_to_display_local_datetime_str_optional(note["timestamp"])
                     or ""
                 )
+            elif column == "projects":
+                column_value = format_tags(note["projects"])
             elif column == "tags":
                 column_value = format_tags(note["tags"])
             elif column == "first_line":
@@ -115,7 +117,7 @@ def single_note_report(active_context: str, note: Note) -> None:
         "timestamp",
         datetime_to_display_local_datetime_str_optional(note["timestamp"]) or "",
     )
-    note_table.add_row("project", note["project"] or "")
+    note_table.add_row("projects", format_tags(note["projects"]))
     note_table.add_row("tags", format_tags(note["tags"]))
     note_table.add_row("color", note["color"] or "")
     note_table.add_row("external_file_path", note.get("external_file_path") or "")

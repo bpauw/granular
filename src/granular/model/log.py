@@ -16,6 +16,6 @@ class Log(TypedDict):
     updated: pendulum.DateTime
     deleted: Optional[pendulum.DateTime]
     tags: Optional[list[str]]
-    project: Optional[str]
+    projects: Optional[list[str]]
     text: Optional[str]
     color: Optional[str]

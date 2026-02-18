@@ -14,7 +14,7 @@ def get_entry_template() -> Entry:
         "tracker_id": UNSET_ENTITY_ID,  # Must be set
         "timestamp": now,
         "value": None,
-        "project": None,
+        "projects": None,
         "tags": None,
         "color": None,
         "created": now,

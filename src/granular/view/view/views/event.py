@@ -26,7 +26,7 @@ def events_view(
         "has_logs",
         "has_notes",
         "title",
-        "project",
+        "projects",
         "tags",
         "start",
         "end",
@@ -53,6 +53,8 @@ def events_view(
                 column_value = str(
                     ID_MAP_REPO.associate_id("events", cast(EntityId, event["id"]))
                 )
+            elif column == "projects":
+                column_value = format_tags(event["projects"])
             elif column == "tags":
                 column_value = format_tags(event["tags"])
             elif column == "has_notes":
@@ -94,7 +96,7 @@ def single_event_view(active_context: str, event: Event) -> None:
     event_table.add_row("title", event["title"])
     event_table.add_row("description", event["description"])
     event_table.add_row("location", event["location"])
-    event_table.add_row("project", event["project"])
+    event_table.add_row("projects", format_tags(event["projects"]))
     event_table.add_row("tags", format_tags(event["tags"]))
     event_table.add_row("color", event["color"])
     event_table.add_row(

@@ -96,11 +96,11 @@ class ContextRepository:
         new_name: Optional[str],
         active: Optional[bool],
         auto_added_tags: Optional[list[str]],
-        auto_added_project: Optional[str],
+        auto_added_projects: Optional[list[str]],
         filter: Optional[Any],
         default_note_folder: Optional[str],
         remove_auto_added_tags: bool,
-        remove_auto_added_project: bool,
+        remove_auto_added_projects: bool,
         remove_filter: bool,
         remove_default_note_folder: bool,
     ) -> None:
@@ -121,8 +121,8 @@ class ContextRepository:
             context["active"] = active
         if auto_added_tags is not None:
             context["auto_added_tags"] = auto_added_tags
-        if auto_added_project is not None:
-            context["auto_added_project"] = auto_added_project
+        if auto_added_projects is not None:
+            context["auto_added_projects"] = auto_added_projects
         if filter is not None:
             context["filter"] = filter
         if default_note_folder is not None:
@@ -142,8 +142,8 @@ class ContextRepository:
 
         if remove_auto_added_tags:
             context["auto_added_tags"] = None
-        if remove_auto_added_project:
-            context["auto_added_project"] = None
+        if remove_auto_added_projects:
+            context["auto_added_projects"] = None
         if remove_filter:
             context["filter"] = None
         if remove_default_note_folder:

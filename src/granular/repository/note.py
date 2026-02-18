@@ -19,6 +19,7 @@ from granular import configuration, time
 from granular.model.context import Context
 from granular.model.note import Note
 from granular.repository.configuration import CONFIGURATION_REPO
+from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
 from granular.time import now_utc
 from granular.model.entity_id import EntityId, generate_entity_id
@@ -362,7 +363,7 @@ class NoteRepository:
             "updated": time.datetime_to_iso_str(note["updated"]),
             "deleted": time.datetime_to_iso_str_optional(note.get("deleted")),
             "tags": note.get("tags"),
-            "project": note.get("project"),
+            "projects": note.get("projects"),
             "color": note.get("color"),
         }
         # Remove None values
@@ -474,9 +475,11 @@ class NoteRepository:
 
         self.notes.append(note)
 
-        # Update tag cache (additive only)
+        # Update tag and project caches (additive only)
         if note["tags"] is not None:
             TAG_REPO.add_tags(note["tags"])
+        if note["projects"] is not None:
+            PROJECT_REPO.add_projects(note["projects"])
 
         return note["id"]
 
@@ -488,7 +491,7 @@ class NoteRepository:
         timestamp: Optional[pendulum.DateTime],
         deleted: Optional[pendulum.DateTime],
         tags: Optional[list[str]],
-        project: Optional[str],
+        projects: Optional[list[str]],
         text: Optional[str],
         color: Optional[str],
         remove_reference_id: bool,
@@ -496,7 +499,7 @@ class NoteRepository:
         remove_timestamp: bool,
         remove_deleted: bool,
         remove_tags: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_text: bool,
         remove_color: bool,
     ) -> None:
@@ -526,8 +529,10 @@ class NoteRepository:
             note["tags"] = deduplicated_tags
             TAG_REPO.add_tags(deduplicated_tags)
             metadata_changed = True
-        if project is not None:
-            note["project"] = project
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            note["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
             metadata_changed = True
         if color is not None:
             note["color"] = color
@@ -568,8 +573,8 @@ class NoteRepository:
         if remove_tags:
             note["tags"] = None
             metadata_changed = True
-        if remove_project:
-            note["project"] = None
+        if remove_projects:
+            note["projects"] = None
             metadata_changed = True
         if remove_text:
             if note.get("external_file_path"):

@@ -18,7 +18,7 @@ def contexts_view(active_context: str, contexts: list[Context]) -> None:
     contexts_table.add_column("active")
     contexts_table.add_column("name")
     contexts_table.add_column("auto_added_tags")
-    contexts_table.add_column("auto_added_project")
+    contexts_table.add_column("auto_added_projects")
     contexts_table.add_column("has_filter")
 
     for context in contexts:
@@ -26,13 +26,11 @@ def contexts_view(active_context: str, contexts: list[Context]) -> None:
         active = "✓" if context["active"] else " "
         name = context["name"]
         auto_added_tags = format_tags(context["auto_added_tags"])
-        auto_added_project = (
-            context["auto_added_project"] if context["auto_added_project"] else ""
-        )
+        auto_added_projects = format_tags(context["auto_added_projects"])
         has_filter = "✓" if context["filter"] is not None else " "
 
         contexts_table.add_row(
-            id, active, name, auto_added_tags, auto_added_project, has_filter
+            id, active, name, auto_added_tags, auto_added_projects, has_filter
         )
 
     console = Console()
@@ -51,8 +49,8 @@ def single_context_view(active_context: str, context: Context) -> None:
     context_table.add_row("active", "✓" if context["active"] else "✗")
     context_table.add_row("auto_added_tags", format_tags(context["auto_added_tags"]))
     context_table.add_row(
-        "auto_added_project",
-        context["auto_added_project"] if context["auto_added_project"] else "",
+        "auto_added_projects",
+        format_tags(context["auto_added_projects"]),
     )
     context_table.add_row("filter", str(context["filter"]) if context["filter"] else "")
     context_table.add_row(

@@ -14,6 +14,7 @@ except ImportError:
 
 from granular import configuration, time
 from granular.model.entry import Entry
+from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
 from granular.model.entity_id import EntityId, generate_entity_id
 
@@ -94,9 +95,11 @@ class EntryRepository:
 
         self.entries.append(entry)
 
-        # Update tag cache (additive only)
+        # Update tag and project caches (additive only)
         if entry["tags"] is not None:
             TAG_REPO.add_tags(entry["tags"])
+        if entry["projects"] is not None:
+            PROJECT_REPO.add_projects(entry["projects"])
 
         return entry["id"]
 
@@ -106,12 +109,12 @@ class EntryRepository:
         tracker_id: Optional[EntityId],
         timestamp: Optional[pendulum.DateTime],
         value: Optional[Union[int, float, str]],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         color: Optional[str],
         deleted: Optional[pendulum.DateTime],
         remove_value: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_color: bool,
         remove_deleted: bool,
@@ -127,8 +130,10 @@ class EntryRepository:
             entry["timestamp"] = timestamp
         if value is not None:
             entry["value"] = value
-        if project is not None:
-            entry["project"] = project
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            entry["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -141,8 +146,8 @@ class EntryRepository:
 
         if remove_value:
             entry["value"] = None
-        if remove_project:
-            entry["project"] = None
+        if remove_projects:
+            entry["projects"] = None
         if remove_tags:
             entry["tags"] = None
         if remove_color:

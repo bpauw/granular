@@ -14,6 +14,7 @@ except ImportError:
 
 from granular import configuration, time
 from granular.model.tracker import Tracker
+from granular.repository.project import PROJECT_REPO
 from granular.repository.tag import TAG_REPO
 from granular.model.entity_id import EntityId, generate_entity_id
 
@@ -98,9 +99,11 @@ class TrackerRepository:
 
         self.trackers.append(tracker)
 
-        # Update tag cache (additive only)
+        # Update tag and project caches (additive only)
         if tracker["tags"] is not None:
             TAG_REPO.add_tags(tracker["tags"])
+        if tracker["projects"] is not None:
+            PROJECT_REPO.add_projects(tracker["projects"])
 
         return tracker["id"]
 
@@ -115,7 +118,7 @@ class TrackerRepository:
         scale_min: Optional[int],
         scale_max: Optional[int],
         options: Optional[list[str]],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         color: Optional[str],
         archived: Optional[pendulum.DateTime],
@@ -125,7 +128,7 @@ class TrackerRepository:
         remove_scale_min: bool,
         remove_scale_max: bool,
         remove_options: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_color: bool,
         remove_archived: bool,
@@ -152,8 +155,10 @@ class TrackerRepository:
             tracker["scale_max"] = scale_max
         if options is not None:
             tracker["options"] = options
-        if project is not None:
-            tracker["project"] = project
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            tracker["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -176,8 +181,8 @@ class TrackerRepository:
             tracker["scale_max"] = None
         if remove_options:
             tracker["options"] = None
-        if remove_project:
-            tracker["project"] = None
+        if remove_projects:
+            tracker["projects"] = None
         if remove_tags:
             tracker["tags"] = None
         if remove_color:

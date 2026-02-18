@@ -486,8 +486,14 @@ def tasks_heatmap_view(
     # Add rows for each project if specified
     if projects is not None:
         for proj in projects:
-            proj_tasks = [t for t in tasks if t["project"] == proj]
-            proj_time_audits = [ta for ta in time_audits if ta["project"] == proj]
+            proj_tasks = [
+                t for t in tasks if t["projects"] is not None and proj in t["projects"]
+            ]
+            proj_time_audits = [
+                ta
+                for ta in time_audits
+                if ta["projects"] is not None and proj in ta["projects"]
+            ]
             rows_to_display.append((proj, "cyan", proj_tasks, proj_time_audits))
 
     # Add rows for each tag if specified

@@ -20,7 +20,7 @@ class Entry(TypedDict):
     value: Optional[Union[int, float, str]]
 
     # Standard fields
-    project: Optional[str]  # Inherited from tracker
+    projects: Optional[list[str]]  # Inherited from tracker
     tags: Optional[list[str]]  # Inherited from tracker
     color: Optional[str]  # Inherited from tracker
     created: pendulum.DateTime

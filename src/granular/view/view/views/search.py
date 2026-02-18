@@ -36,7 +36,7 @@ def search_results_view(
     # Add columns
     search_table.add_column("id")
     search_table.add_column("entity type")
-    search_table.add_column("project")
+    search_table.add_column("projects")
     if no_wrap:
         search_table.add_column("description", no_wrap=True, overflow="ellipsis")
     else:
@@ -48,7 +48,7 @@ def search_results_view(
         search_table.add_row(
             str(result["id"]) if result["id"] is not None else "",
             result["entity_type"],
-            result["project"] or "",
+            format_tags(result["projects"]),
             result["description"] or "",
             format_tags(result["tags"]),
         )

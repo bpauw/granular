@@ -13,7 +13,7 @@ def get_task_template() -> Task:
         "cloned_from_id": None,
         "timespan_id": None,
         "description": None,
-        "project": None,
+        "projects": None,
         "tags": None,
         "priority": None,
         "estimate": None,

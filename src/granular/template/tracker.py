@@ -18,7 +18,7 @@ def get_tracker_template() -> Tracker:
         "scale_min": None,
         "scale_max": None,
         "options": None,
-        "project": None,
+        "projects": None,
         "tags": None,
         "color": None,
         "created": now,

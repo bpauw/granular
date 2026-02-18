@@ -16,7 +16,7 @@ class SearchResult(TypedDict):
 
     id: Optional[EntityId]
     entity_type: str
-    project: Optional[str]
+    projects: Optional[list[str]]
     description: Optional[str]
     tags: Optional[list[str]]
 
@@ -73,7 +73,7 @@ def __convert_to_search_result(
     return SearchResult(
         id=entity.get("id"),
         entity_type=entity_type,
-        project=entity.get("project"),
+        projects=entity.get("projects"),
         description=description,
         tags=entity.get("tags"),
     )
@@ -126,11 +126,14 @@ def __search_in_entity(
                     matched = True
                     break
 
-    # Search in project
+    # Search in projects
     if search_in_project and not matched:
-        project = entity.get("project")
-        if __fuzzy_match(query, project):
-            matched = True
+        projects = entity.get("projects")
+        if projects is not None:
+            for project in projects:
+                if __fuzzy_match(query, project):
+                    matched = True
+                    break
 
     return matched
 

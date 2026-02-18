@@ -29,7 +29,7 @@ class Tracker(TypedDict):
     options: Optional[list[str]]  # e.g., ["coffee", "tea", "water"]
 
     # Standard fields
-    project: Optional[str]
+    projects: Optional[list[str]]
     tags: Optional[list[str]]
     color: Optional[str]
     created: pendulum.DateTime

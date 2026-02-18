@@ -106,8 +106,8 @@ class EventRepository:
         # Update tag and project caches
         if event["tags"] is not None:
             TAG_REPO.add_tags(event["tags"])
-        if event["project"] is not None:
-            PROJECT_REPO.add_project(event["project"])
+        if event["projects"] is not None:
+            PROJECT_REPO.add_projects(event["projects"])
 
         return event["id"]
 
@@ -117,7 +117,7 @@ class EventRepository:
         title: Optional[str],
         description: Optional[str],
         location: Optional[str],
-        project: Optional[str],
+        projects: Optional[list[str]],
         tags: Optional[list[str]],
         color: Optional[str],
         start: Optional[pendulum.DateTime],
@@ -129,7 +129,7 @@ class EventRepository:
         remove_title: bool,
         remove_description: bool,
         remove_location: bool,
-        remove_project: bool,
+        remove_projects: bool,
         remove_tags: bool,
         remove_color: bool,
         remove_end: bool,
@@ -148,9 +148,10 @@ class EventRepository:
             event["description"] = description
         if location is not None:
             event["location"] = location
-        if project is not None:
-            event["project"] = project
-            PROJECT_REPO.add_project(project)
+        if projects is not None:
+            deduplicated_projects = list(dict.fromkeys(projects))
+            event["projects"] = deduplicated_projects
+            PROJECT_REPO.add_projects(deduplicated_projects)
         if tags is not None:
             # Deduplicate tags
             deduplicated_tags = list(dict.fromkeys(tags))
@@ -178,8 +179,8 @@ class EventRepository:
             event["description"] = None
         if remove_location:
             event["location"] = None
-        if remove_project:
-            event["project"] = None
+        if remove_projects:
+            event["projects"] = None
         if remove_tags:
             event["tags"] = None
         if remove_color:

@@ -42,12 +42,12 @@ def add(
     title: Annotated[str, typer.Argument(help="event title")],
     description: Annotated[Optional[str], typer.Option("--description", "-d")] = None,
     location: Annotated[Optional[str], typer.Option("--location", "-l")] = None,
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
-            help="valid input: project.subproject",
+            help="valid input: project.subproject (repeatable)",
             autocompletion=complete_project,
         ),
     ] = None,
@@ -97,10 +97,13 @@ def add(
         else:
             event_tags += tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    event_project = project
-    if event_project is None and active_context["auto_added_project"] is not None:
-        event_project = active_context["auto_added_project"]
+    # Determine projects: merge auto_added_projects from context with provided projects
+    entity_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if entity_projects is None:
+            entity_projects = projects
+        else:
+            entity_projects += projects
 
     # Determine color: use provided color, or random if config enabled
     event_color = color
@@ -111,7 +114,7 @@ def add(
     event["title"] = title
     event["description"] = description
     event["location"] = location
-    event["project"] = event_project
+    event["projects"] = entity_projects
     event["tags"] = event_tags
     event["color"] = event_color
     if start is not None:
@@ -145,13 +148,22 @@ def modify(
     title: Annotated[Optional[str], typer.Option("--title", "-t")] = None,
     description: Annotated[Optional[str], typer.Option("--description", "-d")] = None,
     location: Annotated[Optional[str], typer.Option("--location", "-l")] = None,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
-            help="valid input: project.subproject",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -208,7 +220,9 @@ def modify(
         bool, typer.Option("--remove-description", "-rd")
     ] = False,
     remove_location: Annotated[bool, typer.Option("--remove-location", "-rl")] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rts")] = False,
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
     remove_end: Annotated[bool, typer.Option("--remove-end", "-re")] = False,
@@ -249,12 +263,32 @@ def modify(
             # Set to None if empty, otherwise keep the list
             updated_tags = updated_tags if len(updated_tags) > 0 else None
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            event = EVENT_REPO.get_event(real_id)
+            current_projects = (
+                event["projects"] if event["projects"] is not None else []
+            )
+            updated_projects = list(current_projects)
+
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+
+            # Set to None if empty, otherwise keep the list
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         EVENT_REPO.modify_event(
             real_id,
             title,
             description,
             location,
-            project,
+            updated_projects,
             updated_tags,
             color,
             start,
@@ -266,7 +300,7 @@ def modify(
             remove_title,
             remove_description,
             remove_location,
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_color,
             remove_end,
@@ -444,7 +478,7 @@ def sync_ics() -> None:
                         ical_event.summary,
                         ical_event.description,
                         ical_event.location,
-                        None,  # project
+                        None,  # projects
                         updated_tags,  # tags
                         None,  # color
                         event_start,
@@ -456,7 +490,7 @@ def sync_ics() -> None:
                         False,  # remove_title
                         False,  # remove_description
                         False,  # remove_location
-                        False,  # remove_project
+                        False,  # remove_projects
                         False,  # remove_tags
                         False,  # remove_color
                         False,  # remove_end
@@ -478,9 +512,9 @@ def sync_ics() -> None:
                     new_event["ical_uid"] = ical_event.uid
                     new_event["tags"] = context_tags
 
-                    # Apply auto_added_project from context
-                    if active_context["auto_added_project"] is not None:
-                        new_event["project"] = active_context["auto_added_project"]
+                    # Apply auto_added_projects from context
+                    if active_context["auto_added_projects"] is not None:
+                        new_event["projects"] = active_context["auto_added_projects"]
 
                     # Apply random color if configured
                     if config["random_color_for_events"]:
@@ -589,7 +623,7 @@ def log(
         text=text,
         reference_type=EntityType.EVENT,
         reference_id=real_id,
-        entity_project=event["project"],
+        entity_projects=event["projects"],
         entity_tags=event["tags"],
         timestamp=timestamp,
         add_tags=add_tags,
@@ -683,7 +717,7 @@ def note(
     # Create the note
     note_entry = get_note_template()
     note_entry["text"] = text
-    note_entry["project"] = event["project"]
+    note_entry["projects"] = event["projects"]
     note_entry["tags"] = final_tags
     note_entry["timestamp"] = (
         python_to_pendulum_utc_optional(timestamp)
@@ -758,7 +792,7 @@ def color() -> None:
             None,  # title
             None,  # description
             None,  # location
-            None,  # project
+            None,  # projects
             None,  # tags
             get_random_color(),  # color
             None,  # start
@@ -770,7 +804,7 @@ def color() -> None:
             False,  # remove_title
             False,  # remove_description
             False,  # remove_location
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_color
             False,  # remove_end

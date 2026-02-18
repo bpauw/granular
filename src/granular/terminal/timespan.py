@@ -28,8 +28,8 @@ app = typer.Typer(cls=ContextAwareTyperGroup, no_args_is_help=True)
 @app.command("add, a", no_args_is_help=True)
 def add(
     description: str,
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
@@ -80,10 +80,13 @@ def add(
         else:
             timespan_tags += tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    timespan_project = project
-    if timespan_project is None and active_context["auto_added_project"] is not None:
-        timespan_project = active_context["auto_added_project"]
+    # Determine projects: merge auto_added_projects from context with provided projects
+    timespan_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if timespan_projects is None:
+            timespan_projects = projects
+        else:
+            timespan_projects += projects
 
     # Determine color: use provided color, or random if config enabled
     timespan_color = color
@@ -92,7 +95,7 @@ def add(
 
     timespan = get_timespan_template()
     timespan["description"] = description
-    timespan["project"] = timespan_project
+    timespan["projects"] = timespan_projects
     timespan["tags"] = timespan_tags
     timespan["color"] = timespan_color
     timespan["start"] = python_to_pendulum_utc_optional(start)
@@ -118,13 +121,22 @@ def add(
 def modify(
     id: str,
     description: Annotated[Optional[str], typer.Option("--description", "-d")] = None,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
-            help="valid input: project.subproject",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -203,7 +215,9 @@ def modify(
     remove_description: Annotated[
         bool, typer.Option("--remove-description", "-rd")
     ] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rT")] = False,
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
     remove_start: Annotated[bool, typer.Option("--remove-start", "-rs")] = False,
@@ -247,10 +261,25 @@ def modify(
             if tags is not None:
                 tags = [tag for tag in tags if tag not in remove_tag_list]
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            current_projects = (
+                timespan["projects"] if timespan["projects"] is not None else []
+            )
+            updated_projects = list(current_projects)
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         TIMESPAN_REPO.modify_timespan(
             real_id,
             description,
-            project,
+            updated_projects,
             tags,
             color,
             python_to_pendulum_utc_optional(start),
@@ -260,7 +289,7 @@ def modify(
             python_to_pendulum_utc_optional(cancelled),
             python_to_pendulum_utc_optional(deleted),
             remove_description,
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_color,
             remove_start,
@@ -309,7 +338,7 @@ def complete(id: str) -> None:
         TIMESPAN_REPO.modify_timespan(
             real_id,
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # color
             None,  # start
@@ -319,7 +348,7 @@ def complete(id: str) -> None:
             None,  # cancelled
             None,  # deleted
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_color
             False,  # remove_start
@@ -368,7 +397,7 @@ def delete(id: str) -> None:
         TIMESPAN_REPO.modify_timespan(
             real_id,
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             None,  # color
             None,  # start
@@ -378,7 +407,7 @@ def delete(id: str) -> None:
             None,  # cancelled
             now_utc(),  # deleted
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_color
             False,  # remove_start

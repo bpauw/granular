@@ -16,7 +16,7 @@ class Timespan(TypedDict):
     deleted: Optional[pendulum.DateTime]
     start: Optional[pendulum.DateTime]
     end: Optional[pendulum.DateTime]
-    project: Optional[str]
+    projects: Optional[list[str]]
     tags: Optional[list[str]]
     color: Optional[str]
     completed: Optional[pendulum.DateTime]

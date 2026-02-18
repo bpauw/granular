@@ -40,7 +40,7 @@ def tasks_view(
         "has_notes",
         "priority",
         "description",
-        "project",
+        "projects",
         "tags",
         "estimate",
         "actual",
@@ -77,6 +77,8 @@ def tasks_view(
                 column_value = render_duration(total_duration) or ""
             elif column == "estimate":
                 column_value = render_duration(task["estimate"]) or ""
+            elif column == "projects":
+                column_value = format_tags(task["projects"])
             elif column == "tags":
                 column_value = format_tags(task["tags"])
             elif column == "has_notes":
@@ -127,7 +129,7 @@ def single_task_view(
     else:
         task_table.add_row("cloned_from_id", str(task["cloned_from_id"] or ""))
     task_table.add_row("description", task["description"])
-    task_table.add_row("project", task["project"])
+    task_table.add_row("projects", format_tags(task["projects"]))
     task_table.add_row("tags", format_tags(task["tags"]))
     task_table.add_row("priority", str(task["priority"] or ""))
     task_table.add_row("estimate", render_duration(task["estimate"]))

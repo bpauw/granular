@@ -53,6 +53,8 @@ def entries_view(
                         column_value += f" {tracker['unit']}"
                 elif tracker["value_type"] == "checkin":
                     column_value = "(checked)"
+            elif column == "projects":
+                column_value = format_tags(entry["projects"])
             elif column == "tags":
                 column_value = format_tags(entry["tags"])
             elif entry.get(column) is not None:
@@ -106,7 +108,7 @@ def single_entry_view(
     else:
         entry_table.add_row("value", "")
 
-    entry_table.add_row("project", entry["project"] or "")
+    entry_table.add_row("projects", format_tags(entry["projects"]))
     entry_table.add_row("tags", format_tags(entry["tags"]))
     entry_table.add_row("color", entry["color"] or "")
     entry_table.add_row(

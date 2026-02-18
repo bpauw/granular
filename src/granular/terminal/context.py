@@ -26,8 +26,8 @@ def add(
         Optional[list[str]],
         typer.Option("--auto-added-tag", "-a", help="accepts multiple tag options"),
     ] = None,
-    auto_added_project: Annotated[
-        Optional[str],
+    auto_added_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--auto-added-project", "-p", help="valid input: project.subproject"
         ),
@@ -66,7 +66,7 @@ def add(
     context = get_context_template()
     context["name"] = name
     context["auto_added_tags"] = auto_added_tags
-    context["auto_added_project"] = auto_added_project
+    context["auto_added_projects"] = auto_added_projects
     context["default_note_folder"] = default_note_folder
 
     context_id = CONTEXT_REPO.save_new_context(context)
@@ -101,11 +101,11 @@ def activate(
                 new_name=None,
                 active=False,
                 auto_added_tags=None,
-                auto_added_project=None,
+                auto_added_projects=None,
                 filter=None,
                 default_note_folder=None,
                 remove_auto_added_tags=False,
-                remove_auto_added_project=False,
+                remove_auto_added_projects=False,
                 remove_filter=False,
                 remove_default_note_folder=False,
             )
@@ -116,11 +116,11 @@ def activate(
         new_name=None,
         active=True,
         auto_added_tags=None,
-        auto_added_project=None,
+        auto_added_projects=None,
         filter=None,
         default_note_folder=None,
         remove_auto_added_tags=False,
-        remove_auto_added_project=False,
+        remove_auto_added_projects=False,
         remove_filter=False,
         remove_default_note_folder=False,
     )

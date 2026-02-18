@@ -28,7 +28,7 @@ def logs_view(
         "timestamp",
         "reference_type",
         "reference_id",
-        "project",
+        "projects",
         "tags",
         "text",
     ],
@@ -67,6 +67,8 @@ def logs_view(
                     datetime_to_display_local_datetime_str_optional(log["timestamp"])
                     or ""
                 )
+            elif column == "projects":
+                column_value = format_tags(log["projects"])
             elif column == "tags":
                 column_value = format_tags(log["tags"])
             elif isinstance(log[column], pendulum.DateTime):  # type: ignore[literal-required]
@@ -112,7 +114,7 @@ def single_log_report(active_context: str, log: Log) -> None:
         "timestamp",
         datetime_to_display_local_datetime_str_optional(log["timestamp"]) or "",
     )
-    log_table.add_row("project", log["project"] or "")
+    log_table.add_row("projects", format_tags(log["projects"]))
     log_table.add_row("tags", format_tags(log["tags"]))
     log_table.add_row("color", log["color"] or "")
     log_table.add_row("created", datetime_to_display_local_date_str(log["created"]))

@@ -14,7 +14,7 @@ def get_note_template() -> Note:
         "updated": now_utc(),
         "deleted": None,
         "tags": None,
-        "project": None,
+        "projects": None,
         "text": None,
         "color": None,
         "external_file_path": None,

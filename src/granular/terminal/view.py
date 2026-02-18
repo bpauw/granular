@@ -211,7 +211,11 @@ def tasks(
 
     # Filter by project if provided
     if project is not None:
-        tasks = [task for task in tasks if task["project"] == project]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -401,7 +405,9 @@ def time_audits(
     # Filter by project if provided
     if project is not None:
         time_audits = [
-            time_audit for time_audit in time_audits if time_audit["project"] == project
+            time_audit
+            for time_audit in time_audits
+            if time_audit["projects"] is not None and project in time_audit["projects"]
         ]
 
     if "filter" in active_context and active_context["filter"] is not None:
@@ -600,7 +606,11 @@ def events(
 
     # Filter by project if provided
     if project is not None:
-        events = [event for event in events if event["project"] == project]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -761,7 +771,9 @@ def timespans(
     # Filter by project if provided
     if project is not None:
         timespans = [
-            timespan for timespan in timespans if timespan["project"] == project
+            timespan
+            for timespan in timespans
+            if timespan["projects"] is not None and project in timespan["projects"]
         ]
 
     if "filter" in active_context and active_context["filter"] is not None:
@@ -946,7 +958,11 @@ def logs(
 
     # Filter by project if provided
     if project is not None:
-        logs_list = [log for log in logs_list if log["project"] == project]
+        logs_list = [
+            log
+            for log in logs_list
+            if log["projects"] is not None and project in log["projects"]
+        ]
 
     # Filter by reference_type if provided
     if reference_type is not None:
@@ -1094,7 +1110,11 @@ def notes(
 
     # Filter by project if provided
     if project is not None:
-        notes_list = [note for note in notes_list if note["project"] == project]
+        notes_list = [
+            note
+            for note in notes_list
+            if note["projects"] is not None and project in note["projects"]
+        ]
 
     # Filter by reference_type if provided
     if reference_type is not None:
@@ -1368,11 +1388,21 @@ def gantt(
 
     # Filter by project if provided
     if project is not None:
-        tasks = [task for task in tasks if task["project"] == project]
-        timespans = [
-            timespan for timespan in timespans if timespan["project"] == project
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
         ]
-        events = [event for event in events if event["project"] == project]
+        timespans = [
+            timespan
+            for timespan in timespans
+            if timespan["projects"] is not None and project in timespan["projects"]
+        ]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -1475,9 +1505,17 @@ def context_current_name() -> None:
 
 @app.command("projects, p")
 def projects() -> None:
+    from granular.repository.entry import ENTRY_REPO
+    from granular.repository.tracker import TRACKER_REPO
+
     tasks = TASK_REPO.get_all_tasks()
     time_audits = TIME_AUDIT_REPO.get_all_time_audits()
     events = EVENT_REPO.get_all_events()
+    timespans = TIMESPAN_REPO.get_all_timespans()
+    logs = LOG_REPO.get_all_logs()
+    notes = NOTE_REPO.get_all_notes()
+    trackers = TRACKER_REPO.get_all_trackers()
+    entries = ENTRY_REPO.get_all_entries()
     active_context = CONTEXT_REPO.get_active_context()
 
     active_context_name = cast(str, active_context["name"])
@@ -1488,6 +1526,11 @@ def projects() -> None:
         time_audit for time_audit in time_audits if time_audit["deleted"] is None
     ]
     events = [event for event in events if event["deleted"] is None]
+    timespans = [timespan for timespan in timespans if timespan["deleted"] is None]
+    logs = [log for log in logs if log["deleted"] is None]
+    notes = [note for note in notes if note["deleted"] is None]
+    trackers = [tracker for tracker in trackers if tracker["deleted"] is None]
+    entries = [entry for entry in entries if entry["deleted"] is None]
 
     # Apply context filter
     if "filter" in active_context and active_context["filter"] is not None:
@@ -1503,18 +1546,53 @@ def projects() -> None:
             list[Event],
             context_filter.filter(cast(list[dict[str, Any]], events)),
         )
+        timespans = cast(
+            list[Timespan],
+            context_filter.filter(cast(list[dict[str, Any]], timespans)),
+        )
+        logs = cast(
+            list[Log],
+            context_filter.filter(cast(list[dict[str, Any]], logs)),
+        )
+        notes = cast(
+            list[Note],
+            context_filter.filter(cast(list[dict[str, Any]], notes)),
+        )
+        trackers = cast(
+            list[Tracker],
+            context_filter.filter(cast(list[dict[str, Any]], trackers)),
+        )
+        entries = cast(
+            list[Entry],
+            context_filter.filter(cast(list[dict[str, Any]], entries)),
+        )
 
     # Collect all unique projects from filtered entities
     all_projects: set[str] = set()
     for task in tasks:
-        if task["project"] is not None:
-            all_projects.add(task["project"])
+        if task["projects"] is not None:
+            all_projects.update(task["projects"])
     for time_audit in time_audits:
-        if time_audit["project"] is not None:
-            all_projects.add(time_audit["project"])
+        if time_audit["projects"] is not None:
+            all_projects.update(time_audit["projects"])
     for event in events:
-        if event["project"] is not None:
-            all_projects.add(event["project"])
+        if event["projects"] is not None:
+            all_projects.update(event["projects"])
+    for timespan in timespans:
+        if timespan["projects"] is not None:
+            all_projects.update(timespan["projects"])
+    for log in logs:
+        if log["projects"] is not None:
+            all_projects.update(log["projects"])
+    for note in notes:
+        if note["projects"] is not None:
+            all_projects.update(note["projects"])
+    for tracker in trackers:
+        if tracker["projects"] is not None:
+            all_projects.update(tracker["projects"])
+    for entry in entries:
+        if entry["projects"] is not None:
+            all_projects.update(entry["projects"])
 
     # Sort alphabetically
     sorted_projects = sorted(list(all_projects))
@@ -1701,13 +1779,31 @@ def cal_day(
     # Filter by project if provided
     if project is not None:
         time_audits = [
-            time_audit for time_audit in time_audits if time_audit["project"] == project
+            time_audit
+            for time_audit in time_audits
+            if time_audit["projects"] is not None and project in time_audit["projects"]
         ]
-        events = [event for event in events if event["project"] == project]
-        tasks = [task for task in tasks if task["project"] == project]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
         if show_trackers:
-            trackers = [t for t in trackers if t["project"] == project]
-            entries = [e for e in entries if e["project"] == project]
+            trackers = [
+                t
+                for t in trackers
+                if t["projects"] is not None and project in t["projects"]
+            ]
+            entries = [
+                e
+                for e in entries
+                if e["projects"] is not None and project in e["projects"]
+            ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -1874,10 +1970,20 @@ def cal_week(
     # Filter by project if provided
     if project is not None:
         time_audits = [
-            time_audit for time_audit in time_audits if time_audit["project"] == project
+            time_audit
+            for time_audit in time_audits
+            if time_audit["projects"] is not None and project in time_audit["projects"]
         ]
-        events = [event for event in events if event["project"] == project]
-        tasks = [task for task in tasks if task["project"] == project]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -2063,13 +2169,31 @@ def cal_days(
     # Filter by project if provided
     if project is not None:
         time_audits = [
-            time_audit for time_audit in time_audits if time_audit["project"] == project
+            time_audit
+            for time_audit in time_audits
+            if time_audit["projects"] is not None and project in time_audit["projects"]
         ]
-        events = [event for event in events if event["project"] == project]
-        tasks = [task for task in tasks if task["project"] == project]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
         if show_trackers:
-            trackers = [t for t in trackers if t["project"] == project]
-            entries = [e for e in entries if e["project"] == project]
+            trackers = [
+                t
+                for t in trackers
+                if t["projects"] is not None and project in t["projects"]
+            ]
+            entries = [
+                e
+                for e in entries
+                if e["projects"] is not None and project in e["projects"]
+            ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -2219,8 +2343,16 @@ def cal_month(
 
     # Filter by project if provided
     if project is not None:
-        tasks = [task for task in tasks if task["project"] == project]
-        events = [event for event in events if event["project"] == project]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -2331,8 +2463,16 @@ def cal_quarter(
 
     # Filter by project if provided
     if project is not None:
-        tasks = [task for task in tasks if task["project"] == project]
-        events = [event for event in events if event["project"] == project]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])
@@ -2509,15 +2649,35 @@ def cal_agenda_days(
     # Filter by project if provided
     if project is not None:
         time_audits = [
-            time_audit for time_audit in time_audits if time_audit["project"] == project
+            time_audit
+            for time_audit in time_audits
+            if time_audit["projects"] is not None and project in time_audit["projects"]
         ]
-        events = [event for event in events if event["project"] == project]
-        tasks = [task for task in tasks if task["project"] == project]
+        events = [
+            event
+            for event in events
+            if event["projects"] is not None and project in event["projects"]
+        ]
+        tasks = [
+            task
+            for task in tasks
+            if task["projects"] is not None and project in task["projects"]
+        ]
         timespans = [
-            timespan for timespan in timespans if timespan["project"] == project
+            timespan
+            for timespan in timespans
+            if timespan["projects"] is not None and project in timespan["projects"]
         ]
-        logs = [log for log in logs if log["project"] == project]
-        notes = [note for note in notes if note["project"] == project]
+        logs = [
+            log
+            for log in logs
+            if log["projects"] is not None and project in log["projects"]
+        ]
+        notes = [
+            note
+            for note in notes
+            if note["projects"] is not None and project in note["projects"]
+        ]
 
     if "filter" in active_context and active_context["filter"] is not None:
         context_filter = generate_filter(active_context["filter"])

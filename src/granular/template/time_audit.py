@@ -11,7 +11,7 @@ def get_time_audit_template() -> TimeAudit:
         "id": None,
         "entity_type": EntityType.TIME_AUDIT,
         "description": None,
-        "project": None,
+        "projects": None,
         "tags": None,
         "color": None,
         "start": None,

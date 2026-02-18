@@ -102,7 +102,7 @@ def single_tracker_view(
     tracker_table.add_row(
         "options", ", ".join(tracker["options"]) if tracker["options"] else ""
     )
-    tracker_table.add_row("project", tracker["project"] or "")
+    tracker_table.add_row("projects", format_tags(tracker["projects"]))
     tracker_table.add_row("tags", format_tags(tracker["tags"]))
     tracker_table.add_row("color", tracker["color"] or "")
     tracker_table.add_row(

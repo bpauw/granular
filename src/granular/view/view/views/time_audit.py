@@ -29,7 +29,7 @@ def time_audits_report(
         "has_logs",
         "has_notes",
         "description",
-        "project",
+        "projects",
         "tags",
         "start",
         "end",
@@ -127,6 +127,8 @@ def time_audits_report(
                         total_duration = duration
                     else:
                         total_duration = total_duration + duration
+            elif column == "projects":
+                column_value = format_tags(time_audit["projects"])
             elif column == "tags":
                 column_value = format_tags(time_audit["tags"])
             elif column == "has_notes":
@@ -210,7 +212,7 @@ def single_time_audit_report(
         str(ID_MAP_REPO.associate_id("time_audits", cast(EntityId, time_audit["id"]))),
     )
     time_audit_table.add_row("description", time_audit["description"])
-    time_audit_table.add_row("project", time_audit["project"])
+    time_audit_table.add_row("projects", format_tags(time_audit["projects"]))
     time_audit_table.add_row("tags", format_tags(time_audit["tags"]))
     time_audit_table.add_row("color", time_audit["color"])
     time_audit_table.add_row(

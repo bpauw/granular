@@ -13,7 +13,7 @@ class Event(TypedDict):
     title: Optional[str]
     description: Optional[str]
     location: Optional[str]
-    project: Optional[str]
+    projects: Optional[list[str]]
     tags: Optional[list[str]]
     color: Optional[str]
     start: pendulum.DateTime

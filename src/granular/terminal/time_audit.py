@@ -39,8 +39,8 @@ app = typer.Typer(cls=ContextAwareTyperGroup, no_args_is_help=True)
 @app.command("add, a", no_args_is_help=True)
 def add(
     description: str,
-    project: Annotated[
-        Optional[str],
+    projects: Annotated[
+        Optional[list[str]],
         typer.Option(
             "--project",
             "-p",
@@ -98,10 +98,13 @@ def add(
         else:
             time_audit_tags += tags
 
-    # Determine project: use provided project, or auto_added_project from context
-    time_audit_project = project
-    if time_audit_project is None and active_context["auto_added_project"] is not None:
-        time_audit_project = active_context["auto_added_project"]
+    # Determine projects: merge auto_added_projects from context with provided projects
+    entity_projects = active_context["auto_added_projects"]
+    if projects is not None:
+        if entity_projects is None:
+            entity_projects = projects
+        else:
+            entity_projects += projects
 
     # Determine color: use provided color, or random if config enabled
     time_audit_color = color
@@ -110,7 +113,7 @@ def add(
 
     time_audit = get_time_audit_template()
     time_audit["description"] = description
-    time_audit["project"] = time_audit_project
+    time_audit["projects"] = entity_projects
     time_audit["tags"] = time_audit_tags
     time_audit["color"] = time_audit_color
     time_audit["start"] = (
@@ -165,13 +168,22 @@ def add(
 def modify(
     id: str,
     description: Annotated[Optional[str], typer.Option("--description", "-d")] = None,
-    project: Annotated[
-        Optional[str],
+    add_projects: Annotated[
+        Optional[list[str]],
         typer.Option(
-            "--project",
-            "-p",
-            help="valid input: project.subproject",
+            "--add-project",
+            "-ap",
             autocompletion=complete_project,
+            help="Add project (repeatable)",
+        ),
+    ] = None,
+    remove_project_list: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--remove-project",
+            "-rp",
+            autocompletion=complete_project,
+            help="Remove specific project (repeatable)",
         ),
     ] = None,
     add_tags: Annotated[
@@ -224,7 +236,9 @@ def modify(
     remove_description: Annotated[
         bool, typer.Option("--remove-description", "-rd")
     ] = False,
-    remove_project: Annotated[bool, typer.Option("--remove-project", "-rp")] = False,
+    remove_projects: Annotated[
+        bool, typer.Option("--remove-projects", "-rpjs", help="Clear all projects")
+    ] = False,
     remove_tags: Annotated[bool, typer.Option("--remove-tags", "-rts")] = False,
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
     remove_start: Annotated[bool, typer.Option("--remove-start", "-rs")] = False,
@@ -271,10 +285,30 @@ def modify(
             # Set to None if empty, otherwise keep the list
             updated_tags = updated_tags if len(updated_tags) > 0 else None
 
+        # Handle project modifications
+        updated_projects = None
+        if add_projects is not None or remove_project_list is not None:
+            time_audit = TIME_AUDIT_REPO.get_time_audit(real_id)
+            current_projects = (
+                time_audit["projects"] if time_audit["projects"] is not None else []
+            )
+            updated_projects = list(current_projects)
+
+            if add_projects is not None:
+                updated_projects.extend(add_projects)
+
+            if remove_project_list is not None:
+                updated_projects = [
+                    p for p in updated_projects if p not in remove_project_list
+                ]
+
+            # Set to None if empty, otherwise keep the list
+            updated_projects = updated_projects if len(updated_projects) > 0 else None
+
         TIME_AUDIT_REPO.modify_time_audit(
             real_id,
             description,
-            project,
+            updated_projects,
             updated_tags,
             color,
             start,
@@ -282,7 +316,7 @@ def modify(
             real_task_id,
             deleted,
             remove_description,
-            remove_project,
+            remove_projects,
             remove_tags,
             remove_color,
             remove_start,
@@ -584,7 +618,7 @@ def log(
         text=text,
         reference_type=EntityType.TIME_AUDIT,
         reference_id=real_id,
-        entity_project=time_audit["project"],
+        entity_projects=time_audit["projects"],
         entity_tags=time_audit["tags"],
         timestamp=timestamp,
         add_tags=add_tags,
@@ -676,7 +710,7 @@ def note(
     # Create the note
     note_entry = get_note_template()
     note_entry["text"] = text
-    note_entry["project"] = time_audit["project"]
+    note_entry["projects"] = time_audit["projects"]
     note_entry["tags"] = final_tags
     note_entry["timestamp"] = (
         python_to_pendulum_utc_optional(timestamp)
@@ -750,7 +784,7 @@ def color() -> None:
         TIME_AUDIT_REPO.modify_time_audit(
             time_audit["id"],  # type: ignore[arg-type]
             None,  # description
-            None,  # project
+            None,  # projects
             None,  # tags
             get_random_color(),  # color
             None,  # start
@@ -758,7 +792,7 @@ def color() -> None:
             None,  # task_id
             None,  # deleted
             False,  # remove_description
-            False,  # remove_project
+            False,  # remove_projects
             False,  # remove_tags
             False,  # remove_color
             False,  # remove_start
