@@ -2,14 +2,13 @@
 
 from typing import cast
 
-from granular.model.entity_id import EntityId
-
 import pendulum
 from rich import box
 from rich.console import Console
 from rich.table import Table
 
 from granular.color import COMPLETED_TASK_COLOR
+from granular.model.entity_id import EntityId
 from granular.model.log import Log
 from granular.model.note import Note
 from granular.model.task import Task
@@ -41,6 +40,10 @@ def tasks_view(
         "has_notes",
         "priority",
         "description",
+        "project",
+        "tags",
+        "estimate",
+        "actual",
     ],
     time_audits: list[TimeAudit] = [],
     notes: list[Note] = [],

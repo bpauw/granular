@@ -2,14 +2,13 @@
 
 from typing import cast
 
-from granular.model.entity_id import EntityId
-
 import pendulum
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from granular.model.entity_id import EntityId
 from granular.model.log import Log
 from granular.repository.id_map import ID_MAP_REPO
 from granular.time import (
@@ -30,6 +29,7 @@ def logs_view(
         "reference_type",
         "reference_id",
         "project",
+        "tags",
         "text",
     ],
     use_color: bool = True,

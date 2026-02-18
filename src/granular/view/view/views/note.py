@@ -2,14 +2,13 @@
 
 from typing import cast
 
-from granular.model.entity_id import EntityId
-
 import pendulum
 from rich import box
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from granular.model.entity_id import EntityId
 from granular.model.note import Note
 from granular.repository.id_map import ID_MAP_REPO
 from granular.time import (
@@ -29,8 +28,8 @@ def notes_report(
         "timestamp",
         "reference_type",
         "reference_id",
-        "project",
         "first_line",
+        "project",
         "tags",
         "external_file_path",
     ],

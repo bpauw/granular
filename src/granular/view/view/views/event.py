@@ -2,13 +2,12 @@
 
 from typing import cast
 
-from granular.model.entity_id import EntityId
-
 import pendulum
 from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from granular.model.entity_id import EntityId
 from granular.model.event import Event
 from granular.model.log import Log
 from granular.model.note import Note
@@ -22,7 +21,16 @@ def events_view(
     active_context: str,
     report_name: str,
     events: list[Event],
-    columns: list[str] = ["id", "has_logs", "has_notes", "title", "start", "end"],
+    columns: list[str] = [
+        "id",
+        "has_logs",
+        "has_notes",
+        "title",
+        "project",
+        "tags",
+        "start",
+        "end",
+    ],
     notes: list[Note] = [],
     logs: list[Log] = [],
     use_color: bool = True,

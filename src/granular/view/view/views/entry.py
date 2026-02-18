@@ -2,12 +2,11 @@
 
 from typing import cast
 
-from granular.model.entity_id import EntityId
-
 from rich import box
 from rich.console import Console
 from rich.table import Table
 
+from granular.model.entity_id import EntityId
 from granular.model.entry import Entry
 from granular.model.tracker import Tracker
 from granular.repository.id_map import ID_MAP_REPO
@@ -20,7 +19,7 @@ def entries_view(
     active_context: str,
     tracker: Tracker,
     entries: list[Entry],
-    columns: list[str] = ["id", "timestamp", "value"],
+    columns: list[str] = ["id", "timestamp", "value", "tags"],
     use_color: bool = True,
     no_wrap: bool = False,
 ) -> None:
