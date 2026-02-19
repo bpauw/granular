@@ -16,7 +16,7 @@ def get_time_audit_template() -> TimeAudit:
         "color": None,
         "start": None,
         "end": None,
-        "task_id": None,
+        "task_ids": None,
         "created": now,
         "updated": now,
         "deleted": None,

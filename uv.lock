@@ -34,7 +34,7 @@ wheels = [
 
 [[package]]
 name = "granular"
-version = "0.5.0a0"
+version = "0.6.0a0"
 source = { editable = "." }
 dependencies = [
     { name = "icalevents" },

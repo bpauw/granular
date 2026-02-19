@@ -78,9 +78,10 @@ def dispatch(view_type: TerminalView, view_params: TerminalViewParams) -> None:
             )
         case TerminalView.TIME_AUDITS:
             params = cast(TimeAuditsParams, view_params)
+            task_ids = params.get("task_ids")
             terminal_view.time_audits(
                 include_deleted=params.get("include_deleted", False),
-                task_id=params.get("task_id"),
+                task_id=",".join(str(tid) for tid in task_ids) if task_ids else None,
                 tag=params.get("tag"),
                 no_tag=params.get("no_tag"),
                 project=params.get("project"),

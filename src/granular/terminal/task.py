@@ -788,7 +788,7 @@ def clone(
 
 @app.command("track, tr", no_args_is_help=True)
 def track(
-    id: int,
+    id: str,
     description: Annotated[Optional[str], typer.Option("--description", "-d")] = None,
 ) -> None:
     version = Version()
@@ -796,11 +796,16 @@ def track(
     active_context = CONTEXT_REPO.get_active_context()
 
     active_context_name = cast(str, active_context["name"])
-    real_id = ID_MAP_REPO.get_real_id("tasks", id)
     config = CONFIGURATION_REPO.get_config()
 
-    # Get the task to copy information from
-    task = TASK_REPO.get_task(real_id)
+    # Parse comma-separated task IDs
+    task_ids_parsed: list[int] = parse_id_list(id)
+    real_ids: list[EntityId] = [
+        ID_MAP_REPO.get_real_id("tasks", tid) for tid in task_ids_parsed
+    ]
+
+    # Look up all tasks and validate they exist
+    tasks = [TASK_REPO.get_task(rid) for rid in real_ids]
 
     # Stop any currently open time audits
     all_time_audits = TIME_AUDIT_REPO.get_all_time_audits()
@@ -819,8 +824,6 @@ def track(
                 None,
                 current_time,
                 None,
-                None,
-                False,
                 False,
                 False,
                 False,
@@ -830,55 +833,73 @@ def track(
                 False,
             )
 
-    # Prepare tags: merge task tags with auto-added context tags (deduplicated)
-    time_audit_tags = task["tags"]
-    if active_context["auto_added_tags"] is not None:
-        if time_audit_tags is None:
-            time_audit_tags = active_context["auto_added_tags"]
-        else:
-            # Deduplicate tags: add context tags that aren't already in task tags
-            combined_tags = list(time_audit_tags)
-            for tag in active_context["auto_added_tags"]:
-                if tag not in combined_tags:
-                    combined_tags.append(tag)
-            time_audit_tags = combined_tags
+    # Merge description from all tasks (or use --description flag)
+    if description is not None:
+        merged_description = description
+    else:
+        merged_description = " + ".join(
+            task["description"] for task in tasks if task["description"] is not None
+        )
 
-    # Determine color: use random if config enabled
+    # Merge projects from all tasks (deduplicated)
+    merged_projects: Optional[list[str]] = None
+    for task in tasks:
+        if task["projects"] is not None:
+            if merged_projects is None:
+                merged_projects = []
+            for p in task["projects"]:
+                if p not in merged_projects:
+                    merged_projects.append(p)
+
+    # Merge with context auto_added_projects
+    if active_context["auto_added_projects"] is not None:
+        if merged_projects is None:
+            merged_projects = active_context["auto_added_projects"]
+        else:
+            for proj in active_context["auto_added_projects"]:
+                if proj not in merged_projects:
+                    merged_projects.append(proj)
+
+    # Merge tags from all tasks (deduplicated)
+    merged_tags: Optional[list[str]] = None
+    for task in tasks:
+        if task["tags"] is not None:
+            if merged_tags is None:
+                merged_tags = []
+            for t in task["tags"]:
+                if t not in merged_tags:
+                    merged_tags.append(t)
+
+    # Merge with context auto_added_tags
+    if active_context["auto_added_tags"] is not None:
+        if merged_tags is None:
+            merged_tags = active_context["auto_added_tags"]
+        else:
+            for tag in active_context["auto_added_tags"]:
+                if tag not in merged_tags:
+                    merged_tags.append(tag)
+
+    # Color: random if config enabled, otherwise None (don't take from tasks)
     time_audit_color = None
     if config["random_color_for_time_audits"]:
         time_audit_color = get_random_color()
 
-    # Determine projects: merge task projects with context auto_added_projects
-    time_audit_projects = task["projects"]
-    if active_context["auto_added_projects"] is not None:
-        if time_audit_projects is None:
-            time_audit_projects = active_context["auto_added_projects"]
-        else:
-            # Deduplicate projects: add context projects that aren't already in task projects
-            combined_projects = list(time_audit_projects)
-            for proj in active_context["auto_added_projects"]:
-                if proj not in combined_projects:
-                    combined_projects.append(proj)
-            time_audit_projects = combined_projects
-
     # Create new time audit
     time_audit = get_time_audit_template()
-    time_audit["description"] = (
-        description if description is not None else task["description"]
-    )
-    time_audit["projects"] = time_audit_projects
-    time_audit["tags"] = time_audit_tags
+    time_audit["description"] = merged_description
+    time_audit["projects"] = merged_projects
+    time_audit["tags"] = merged_tags
     time_audit["color"] = time_audit_color
     time_audit["start"] = current_time
     time_audit["end"] = None
-    time_audit["task_id"] = real_id
+    time_audit["task_ids"] = real_ids
 
     time_audit_id = TIME_AUDIT_REPO.save_new_time_audit(time_audit)
     new_time_audit = TIME_AUDIT_REPO.get_time_audit(time_audit_id)
 
     if config["use_git_versioning"]:
         version.create_data_checkpoint(
-            f"track task: {real_id}: {new_time_audit['description']}"
+            f"track task: {','.join(str(rid) for rid in real_ids)}: {new_time_audit['description']}"
         )
 
     if active_context_name is None:

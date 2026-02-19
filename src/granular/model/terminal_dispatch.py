@@ -76,7 +76,7 @@ class TasksParams(TerminalViewParams):
 
 class TimeAuditsParams(TerminalViewParams):
     include_deleted: NotRequired[bool]
-    task_id: NotRequired[Optional[int]]
+    task_ids: NotRequired[Optional[list[int]]]
     tag: NotRequired[Optional[list[str]]]
     tag_regex: NotRequired[Optional[list[str]]]
     no_tag: NotRequired[Optional[list[str]]]

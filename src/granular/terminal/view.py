@@ -57,7 +57,7 @@ from granular.repository.time_audit import TIME_AUDIT_REPO
 from granular.repository.timespan import TIMESPAN_REPO
 from granular.terminal.completion import complete_project, complete_tag
 from granular.terminal.custom_typer import AlphabeticalContextAwareGroup
-from granular.terminal.parse import parse_datetime, parse_time
+from granular.terminal.parse import parse_datetime, parse_id_list, parse_time
 from granular.time import datetime_to_local_date_str_optional
 from granular.view.terminal_dispatch import update_cached_dispatch
 from granular.view.view.views.calendar import (
@@ -291,8 +291,8 @@ def time_audits(
         typer.Option("--include-deleted", "-i", help="Include deleted time audits"),
     ] = False,
     task_id: Annotated[
-        Optional[int],
-        typer.Option("--task-id", "-tid", help="Filter by task ID"),
+        Optional[str],
+        typer.Option("--task-id", "-tid", help="Filter by task ID (comma-separated)"),
     ] = None,
     tag: Annotated[
         Optional[list[str]],
@@ -352,13 +352,18 @@ def time_audits(
             time_audit for time_audit in time_audits if time_audit["deleted"] is None
         ]
 
-    # Filter by task_id if provided
+    # Parse task_id filter
+    parsed_task_ids: Optional[list[int]] = None
     if task_id is not None:
-        real_task_id: EntityId = ID_MAP_REPO.get_real_id("tasks", task_id)
+        parsed_task_ids = parse_id_list(task_id)
+        real_task_ids_filter: list[EntityId] = [
+            ID_MAP_REPO.get_real_id("tasks", tid) for tid in parsed_task_ids
+        ]
         time_audits = [
             time_audit
             for time_audit in time_audits
-            if time_audit["task_id"] == real_task_id
+            if time_audit["task_ids"] is not None
+            and any(tid in real_task_ids_filter for tid in time_audit["task_ids"])
         ]
 
     # Filter by tags if provided (exact match)
@@ -422,7 +427,7 @@ def time_audits(
     # Cache terminal-level parameters for replay
     terminal_params: TimeAuditsParams = {
         "include_deleted": include_deleted,
-        "task_id": task_id,
+        "task_ids": parsed_task_ids,
         "tag": tag,
         "tag_regex": tag_regex,
         "no_tag": no_tag,

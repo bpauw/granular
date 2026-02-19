@@ -112,11 +112,13 @@ def time_audits_report(
                         "time_audits", cast(EntityId, time_audit["id"])
                     )
                 )
-            elif column == "task_id":
-                if time_audit["task_id"] is not None:
-                    column_value = str(
-                        ID_MAP_REPO.associate_id("tasks", time_audit["task_id"])
-                    )
+            elif column == "task_ids":
+                if time_audit["task_ids"] is not None:
+                    ids_display = [
+                        str(ID_MAP_REPO.associate_id("tasks", tid))
+                        for tid in time_audit["task_ids"]
+                    ]
+                    column_value = ", ".join(ids_display)
             elif column == "duration":
                 # Calculate and format duration
                 duration = __calculate_duration(time_audit)
@@ -221,13 +223,14 @@ def single_time_audit_report(
     time_audit_table.add_row(
         "end", datetime_to_display_local_datetime_str_optional(time_audit["end"])
     )
-    if time_audit["task_id"] is not None:
-        time_audit_table.add_row(
-            "task_id",
-            str(ID_MAP_REPO.associate_id("tasks", time_audit["task_id"])),
-        )
+    if time_audit["task_ids"] is not None:
+        ids_display = [
+            str(ID_MAP_REPO.associate_id("tasks", tid))
+            for tid in time_audit["task_ids"]
+        ]
+        time_audit_table.add_row("task_ids", ", ".join(ids_display))
     else:
-        time_audit_table.add_row("task_id", str(time_audit["task_id"] or ""))
+        time_audit_table.add_row("task_ids", "")
     time_audit_table.add_row(
         "created",
         datetime_to_display_local_datetime_str_optional(time_audit["created"]),

@@ -1,5 +1,23 @@
 # Changelog
 
+## Version 0.6.0-alpha
+
+### New
+
+- Time audits now support tracking multiple tasks simultaneously — the `task_id` field has been replaced with `task_ids` (a list), allowing a single time audit to be linked to any number of tasks
+- The `gran task track` command now accepts multiple comma-separated task IDs (e.g., `gran task track 1,2,3`) to start a time audit linked to several tasks at once
+- Added `--add-task-id` / `-atid` and `--remove-task-id` / `-rtid` flags to `gran audit modify` for granular task list management, plus `--remove-task-ids` / `-rtids` to clear all linked tasks
+- Added data migration (migration 5) that converts all existing `task_id` fields to `task_ids` lists in time audit data
+
+### Updated
+
+- The `--task-id` / `-tid` flag on `gran audit add` now accepts comma-separated task IDs (e.g., `-tid 1,2,3`) to link multiple tasks at creation time
+- The `--task-id` / `-tid` filter on `gran view time-audits` now accepts comma-separated IDs and uses OR logic (shows audits containing any of the specified tasks)
+- When tracking multiple tasks, descriptions are merged with ` + ` separator, and projects/tags are combined from all tasks (deduplicated)
+- Task actual time calculations now split shared time audit durations evenly among all linked tasks (e.g., a 2-hour audit linked to 2 tasks shows 1 hour each)
+- Story views correctly associate time audits with all linked tasks, projects, and tags
+- Time audit list and detail views display `task_ids` as comma-separated synthetic IDs
+
 ## Version 0.5.0-alpha
 
 ### New

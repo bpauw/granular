@@ -16,7 +16,7 @@ class TimeAudit(TypedDict):
     color: Optional[str]
     start: Optional[pendulum.DateTime]
     end: Optional[pendulum.DateTime]
-    task_id: Optional[EntityId]
+    task_ids: Optional[list[EntityId]]
     created: pendulum.DateTime
     updated: pendulum.DateTime
     deleted: Optional[pendulum.DateTime]

@@ -76,7 +76,7 @@ def add(
             help="valid inputs: YYYY-MM-DD HH:mm, (H)H:mm, today, yesterday, tomorrow, or day offset like 1, -1",
         ),
     ] = None,
-    task_id: Annotated[Optional[int], typer.Option("--task-id", "-tid")] = None,
+    task_id: Annotated[Optional[str], typer.Option("--task-id", "-tid")] = None,
 ) -> None:
     """
     add a time audit
@@ -87,9 +87,10 @@ def add(
     config = CONFIGURATION_REPO.get_config()
 
     # Convert task_id from synthetic to real if provided
-    real_task_id = None
+    real_task_ids: Optional[list[EntityId]] = None
     if task_id is not None:
-        real_task_id = ID_MAP_REPO.get_real_id("tasks", task_id)
+        parsed_ids = parse_id_list(task_id)
+        real_task_ids = [ID_MAP_REPO.get_real_id("tasks", tid) for tid in parsed_ids]
 
     time_audit_tags = active_context["auto_added_tags"]
     if tags is not None:
@@ -120,7 +121,7 @@ def add(
         python_to_pendulum_utc_optional(start) if start is not None else now_utc()
     )
     time_audit["end"] = python_to_pendulum_utc_optional(end)
-    time_audit["task_id"] = real_task_id
+    time_audit["task_ids"] = real_task_ids
 
     # Close any open time audits by setting their end time to the new start time
     all_time_audits = TIME_AUDIT_REPO.get_all_time_audits()
@@ -138,8 +139,6 @@ def add(
                 None,
                 time_audit["start"],
                 None,
-                None,
-                False,
                 False,
                 False,
                 False,
@@ -223,7 +222,15 @@ def modify(
             help="valid inputs: YYYY-MM-DD, (H)H:mm, today, yesterday, tomorrow, or day offset like 1, -1",
         ),
     ] = None,
-    task_id: Annotated[Optional[int], typer.Option("--task-id", "-tid")] = None,
+    add_task_id: Annotated[
+        Optional[str], typer.Option("--add-task-id", "-atid")
+    ] = None,
+    remove_task_id: Annotated[
+        Optional[str], typer.Option("--remove-task-id", "-rtid")
+    ] = None,
+    remove_task_ids: Annotated[
+        bool, typer.Option("--remove-task-ids", "-rtids")
+    ] = False,
     deleted: Annotated[
         Optional[pendulum.DateTime],
         typer.Option(
@@ -243,7 +250,6 @@ def modify(
     remove_color: Annotated[bool, typer.Option("--remove-color", "-rcol")] = False,
     remove_start: Annotated[bool, typer.Option("--remove-start", "-rs")] = False,
     remove_end: Annotated[bool, typer.Option("--remove-end", "-re")] = False,
-    remove_task_id: Annotated[bool, typer.Option("--remove-task-id", "-rtid")] = False,
     remove_deleted: Annotated[bool, typer.Option("--remove-deleted", "-rdel")] = False,
 ) -> None:
     """
@@ -257,10 +263,21 @@ def modify(
     # Parse ID list
     ids: list[int] = parse_id_list(id)
 
-    # Convert task_id from synthetic to real if provided
-    real_task_id = None
-    if task_id is not None:
-        real_task_id = ID_MAP_REPO.get_real_id("tasks", task_id)
+    # Parse add_task_id comma-separated string
+    real_add_task_ids: Optional[list[EntityId]] = None
+    if add_task_id is not None:
+        parsed_add = parse_id_list(add_task_id)
+        real_add_task_ids = [
+            ID_MAP_REPO.get_real_id("tasks", tid) for tid in parsed_add
+        ]
+
+    # Parse remove_task_id comma-separated string
+    real_remove_task_ids: Optional[list[EntityId]] = None
+    if remove_task_id is not None:
+        parsed_remove = parse_id_list(remove_task_id)
+        real_remove_task_ids = [
+            ID_MAP_REPO.get_real_id("tasks", tid) for tid in parsed_remove
+        ]
 
     # Process each time audit
     modified_time_audits = []
@@ -313,7 +330,6 @@ def modify(
             color,
             start,
             end,
-            real_task_id,
             deleted,
             remove_description,
             remove_projects,
@@ -321,8 +337,10 @@ def modify(
             remove_color,
             remove_start,
             remove_end,
-            remove_task_id,
             remove_deleted,
+            add_task_ids=real_add_task_ids,
+            remove_task_ids=real_remove_task_ids,
+            remove_all_task_ids=remove_task_ids,
         )
 
         time_audit = TIME_AUDIT_REPO.get_time_audit(real_id)
@@ -370,9 +388,7 @@ def delete(id: str) -> None:
             None,
             None,
             None,
-            None,
             now_utc(),
-            False,
             False,
             False,
             False,
@@ -441,8 +457,6 @@ def stop() -> None:
         None,
         now_utc(),
         None,
-        None,
-        False,
         False,
         False,
         False,
@@ -789,7 +803,6 @@ def color() -> None:
             get_random_color(),  # color
             None,  # start
             None,  # end
-            None,  # task_id
             None,  # deleted
             False,  # remove_description
             False,  # remove_projects
@@ -797,7 +810,6 @@ def color() -> None:
             False,  # remove_color
             False,  # remove_start
             False,  # remove_end
-            False,  # remove_task_id
             False,  # remove_deleted
         )
 

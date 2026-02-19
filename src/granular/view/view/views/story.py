@@ -325,7 +325,7 @@ class StoryDataCollector:
 
             # Get time audits for this task
             task_time_audits = [
-                ta for ta in self.all_time_audits if ta["task_id"] == task_id
+                ta for ta in self.all_time_audits if task_id in (ta["task_ids"] or [])
             ]
             for ta in task_time_audits:
                 if ta["id"] is not None:
@@ -522,7 +522,7 @@ class StoryDataCollector:
                     result_time_audits.append(ta)
                     if ta["id"] is not None:
                         project_time_audit_ids.add(ta["id"])
-                elif ta["task_id"] in project_task_ids:
+                elif any(tid in project_task_ids for tid in (ta["task_ids"] or [])):
                     result_time_audits.append(ta)
                     if ta["id"] is not None:
                         project_time_audit_ids.add(ta["id"])
@@ -656,7 +656,7 @@ class StoryDataCollector:
                 result_time_audits.append(ta)
                 if ta["id"] is not None:
                     tag_time_audit_ids.add(ta["id"])
-            elif ta["task_id"] in tag_task_ids:
+            elif any(tid in tag_task_ids for tid in (ta["task_ids"] or [])):
                 result_time_audits.append(ta)
                 if ta["id"] is not None:
                     tag_time_audit_ids.add(ta["id"])

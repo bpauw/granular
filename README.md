@@ -92,6 +92,9 @@ gran task add "Write report" -p work.reports -p writing --priority 2 --scheduled
 # Start tracking time on a task
 gran task track 1
 
+# Track time on multiple tasks simultaneously
+gran task track 1,2,3
+
 # Stop the active time audit
 gran audit stop
 
@@ -125,7 +128,7 @@ Granular manages eight types of entities:
 | Entity | Description |
 |---|---|
 | **Task** | A discrete unit of work with optional scheduling, due dates, priority, and time estimates |
-| **Time Audit** | A time tracking record with start/end timestamps, optionally linked to a task |
+| **Time Audit** | A time tracking record with start/end timestamps, optionally linked to one or more tasks |
 | **Event** | A calendar event with start/end times, location, and optional iCal sync |
 | **Timespan** | A longer-duration period (e.g., a project phase, a trip, a sprint) |
 | **Note** | Free-form text, either inline or stored as an external markdown file. Can be linked to other entities |
@@ -181,7 +184,7 @@ gran task not-complete <id>              # Mark as not completed
 gran task cancel <id>                    # Mark as cancelled
 gran task delete <id>                    # Soft delete
 gran task clone <id> [options]           # Clone a task
-gran task track <id>                     # Start time tracking from a task
+gran task track <id>                     # Start time tracking from task(s) (comma-separated)
 gran task log <task_id>                  # Add a log entry (opens editor)
 gran task note <task_id>                 # Add a note (opens editor)
 gran task color                          # Assign random colors to uncolored tasks
@@ -237,7 +240,33 @@ gran audit color                         # Assign random colors to uncolored aud
 | `--color` | `-col` | Display color |
 | `--start` | `-s` | Start time (defaults to now) |
 | `--end` | `-e` | End time (omit to leave running) |
-| `--task-id` | `-tid` | Link to a task |
+| `--task-id` | `-tid` | Link to one or more tasks (comma-separated IDs, e.g., `-tid 1,2,3`) |
+
+**Modify options:**
+
+Time audit modify supports all the same field options as add, plus `--remove-*` variants to clear fields. For task management on existing audits:
+
+| Option | Short | Description |
+|---|---|---|
+| `--add-task-id` | `-atid` | Add task(s) to the audit (comma-separated IDs, e.g., `-atid 3,4`) |
+| `--remove-task-id` | `-rtid` | Remove specific task(s) from the audit (comma-separated IDs) |
+| `--remove-task-ids` | `-rtids` | Clear all linked tasks |
+| `--add-project` | `-ap` | Add a project (repeatable) |
+| `--remove-project` | `-rp` | Remove a specific project (repeatable) |
+| `--remove-projects` | `-rpjs` | Clear all projects |
+| `--add-tag` | `-at` | Add a tag (repeatable) |
+| `--remove-tag` | `-rt` | Remove a specific tag (repeatable) |
+| `--remove-tags` | `-rts` | Clear all tags |
+
+**Multi-task tracking:**
+
+When tracking multiple tasks with `gran task track 1,2,3` or `gran audit add "desc" -tid 1,2,3`:
+
+- **Description**: Merged from all tasks with ` + ` separator (e.g., `"Write docs + Fix bug"`). Override with `--description` / `-d` flag.
+- **Projects**: Combined from all tasks into a deduplicated list, merged with context auto-added projects.
+- **Tags**: Combined from all tasks into a deduplicated list, merged with context auto-added tags.
+- **Color**: Uses random color if `random_color_for_time_audits` config is enabled; does not inherit colors from tasks.
+- **Duration splitting**: When viewing task reports, shared audit time is split evenly. A 2-hour audit linked to 2 tasks shows 1 hour of actual time for each task.
 
 ### Events
 
@@ -489,6 +518,8 @@ All view commands are under `gran view` (alias: `gran v`). Most list views suppo
 
 **Tasks** has additional options: `--scheduled`/`-s`, `--due`/`-d` for date filtering, and `--column`/`-c` to select specific columns.
 
+**Time Audits** has additional options: `--task-id`/`-tid` to filter by linked task (comma-separated for OR logic, e.g., `-tid 1,2` shows audits linked to task 1 or task 2).
+
 **Logs and Notes** have additional options: `--reference-type`/`-rt` and `--reference-id`/`-rid` to filter by parent entity.
 
 ### Detail Views
@@ -655,6 +686,8 @@ gran view entries <tracker_id>   # List entries for a tracker
 Custom views let you compose multiple sub-views into a single named command. Define them in `custom-views.yaml` in your data directory under the `custom_views` key.
 
 > **Migration note (v0.3.0):** If you are upgrading from a previous version that used `reports.yaml`, the file is automatically renamed to `custom-views.yaml` and the YAML key is updated to `custom_views` on first run. No manual action is required.
+
+> **Migration note (v0.6.0):** The `task_id` field on time audits has been replaced with `task_ids` (a list). Migration 5 automatically converts existing data. Custom view column lists for time audit sub-views should use `task_ids` instead of `task_id`.
 
 > **Migration note (v0.5.0):** The `project` field on all entities has been replaced with `projects` (a list). Migration 4 automatically converts existing data. Any custom view filters using `filter_type: str` with `property: project` are automatically converted to the new `filter_type: project`. Custom view column lists should use `projects` instead of `project`.
 
@@ -1052,7 +1085,7 @@ All data is stored as plain YAML files on disk — no database is required. The 
 | `migrate.yaml` | Migration version state |
 | `id_migration_map.yaml` | Old integer-to-UUID mapping (generated once by migration 3, kept for reference) |
 
-Entity data files store each entity's `id` as a UUID v4 string. Cross-entity references (e.g., a time audit's `task_id`, a note's `reference_id`) are also stored as UUID strings. The synthetic ID map (`id_map.yaml`) maps short integer IDs to these UUIDs for display and user input.
+Entity data files store each entity's `id` as a UUID v4 string. Cross-entity references (e.g., a time audit's `task_ids` list, a note's `reference_id`) are also stored as UUID strings. The synthetic ID map (`id_map.yaml`) maps short integer IDs to these UUIDs for display and user input.
 
 Data files use lazy loading and in-memory caching for performance, flushed to disk on exit.
 
@@ -1068,6 +1101,7 @@ Current migrations:
 | 2 | Rename `reports.yaml` to `custom-views.yaml` |
 | 3 | Convert all entity IDs from integers to UUID v4 strings |
 | 4 | Convert singular `project` field to plural `projects` list across all entities, contexts, and custom view filters |
+| 5 | Convert singular `task_id` field to plural `task_ids` list on all time audits |
 
 ### Global Options
 

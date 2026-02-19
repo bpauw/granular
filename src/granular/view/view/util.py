@@ -87,10 +87,13 @@ def calculate_task_total_duration(
     total_seconds: float = 0
     for time_audit in time_audits:
         # Only include time audits that are linked to this task and not deleted
-        if time_audit["task_id"] == task_id and time_audit["deleted"] is None:
+        audit_task_ids = time_audit["task_ids"] or []
+        if task_id in audit_task_ids and time_audit["deleted"] is None:
             if time_audit["start"] is not None and time_audit["end"] is not None:
                 duration = time_audit["end"] - time_audit["start"]
-                total_seconds += duration.total_seconds()
+                # Split duration evenly among all linked tasks
+                duration_for_this_task = duration.total_seconds() / len(audit_task_ids)
+                total_seconds += duration_for_this_task
 
     if total_seconds == 0:
         return None

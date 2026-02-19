@@ -130,7 +130,6 @@ class TimeAuditRepository:
         color: Optional[str],
         start: Optional[pendulum.DateTime],
         end: Optional[pendulum.DateTime],
-        task_id: Optional[EntityId],
         deleted: Optional[pendulum.DateTime],
         remove_description: bool,
         remove_projects: bool,
@@ -138,8 +137,10 @@ class TimeAuditRepository:
         remove_color: bool,
         remove_start: bool,
         remove_end: bool,
-        remove_task_id: bool,
         remove_deleted: bool,
+        add_task_ids: Optional[list[EntityId]] = None,
+        remove_task_ids: Optional[list[EntityId]] = None,
+        remove_all_task_ids: bool = False,
     ) -> None:
         self.is_dirty = True
 
@@ -165,8 +166,6 @@ class TimeAuditRepository:
             time_audit["start"] = start
         if end is not None:
             time_audit["end"] = end
-        if task_id is not None:
-            time_audit["task_id"] = task_id
         if deleted is not None:
             time_audit["deleted"] = deleted
 
@@ -182,10 +181,29 @@ class TimeAuditRepository:
             time_audit["start"] = None
         if remove_end:
             time_audit["end"] = None
-        if remove_task_id:
-            time_audit["task_id"] = None
         if remove_deleted:
             time_audit["deleted"] = None
+
+        # Handle task_ids modifications
+        if add_task_ids is not None:
+            current = time_audit["task_ids"]
+            if current is None:
+                time_audit["task_ids"] = list(add_task_ids)
+            else:
+                combined = list(current)
+                for tid in add_task_ids:
+                    if tid not in combined:
+                        combined.append(tid)
+                time_audit["task_ids"] = combined
+
+        if remove_task_ids is not None:
+            current = time_audit["task_ids"]
+            if current is not None:
+                filtered = [tid for tid in current if tid not in remove_task_ids]
+                time_audit["task_ids"] = filtered if len(filtered) > 0 else None
+
+        if remove_all_task_ids:
+            time_audit["task_ids"] = None
 
     def get_all_time_audits(self) -> list[TimeAudit]:
         return deepcopy(self.time_audits)
@@ -293,8 +311,6 @@ class TimeAuditRepository:
             new_start,
             None,
             None,
-            None,
-            False,
             False,
             False,
             False,
@@ -316,8 +332,6 @@ class TimeAuditRepository:
                 None,
                 new_start,
                 None,
-                None,
-                False,
                 False,
                 False,
                 False,
@@ -357,8 +371,6 @@ class TimeAuditRepository:
             None,
             new_end,
             None,
-            None,
-            False,
             False,
             False,
             False,
@@ -380,8 +392,6 @@ class TimeAuditRepository:
                 new_end,
                 None,
                 None,
-                None,
-                False,
                 False,
                 False,
                 False,
