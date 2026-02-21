@@ -23,6 +23,8 @@ class TrackerRepository:
     def __init__(self) -> None:
         self._trackers: Optional[list[Tracker]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def trackers(self) -> list[Tracker]:
@@ -33,26 +35,40 @@ class TrackerRepository:
         return self._trackers
 
     def __load_data(self) -> None:
-        trackers_data = load(
-            configuration.DATA_TRACKERS_PATH.read_text(), Loader=Loader
-        )
-        raw_trackers = trackers_data["trackers"]
-        self._trackers = [
-            self.__convert_tracker_for_deserialization(tracker)
-            for tracker in raw_trackers
-        ]
+        self._trackers = []
+        for file_path in configuration.DATA_TRACKERS_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_tracker = load(file_path.read_text(), Loader=Loader)
+            if raw_tracker is not None:
+                self._trackers.append(
+                    self.__convert_tracker_for_deserialization(raw_tracker)
+                )
 
-    def __save_data(self, trackers: list[Tracker]) -> None:
-        serializable_trackers = [
-            self.__convert_tracker_for_serialization(tracker)
-            for tracker in deepcopy(trackers)
-        ]
-        trackers_data = {"trackers": serializable_trackers}
-        configuration.DATA_TRACKERS_PATH.write_text(dump(trackers_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for tracker in self.trackers:
+            if tracker["id"] in self._dirty_ids:
+                serializable_tracker = self.__convert_tracker_for_serialization(
+                    deepcopy(tracker)
+                )
+                file_path = configuration.DATA_TRACKERS_DIR / f"{tracker['id']}.yaml"
+                file_path.write_text(dump(serializable_tracker, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_TRACKERS_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._trackers is not None and self.is_dirty:
-            self.__save_data(self._trackers)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -98,6 +114,7 @@ class TrackerRepository:
             tracker["tags"] = list(dict.fromkeys(tracker["tags"]))
 
         self.trackers.append(tracker)
+        self._dirty_ids.add(tracker["id"])
 
         # Update tag and project caches (additive only)
         if tracker["tags"] is not None:
@@ -135,6 +152,7 @@ class TrackerRepository:
         remove_deleted: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         tracker = [tracker for tracker in self.trackers if tracker["id"] == id][0]
         # Set updated timestamp to current moment

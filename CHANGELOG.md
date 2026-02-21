@@ -1,5 +1,21 @@
 # Changelog
 
+## Version 0.7.0-alpha
+
+### New
+
+- Each entity type (tasks, events, time audits, timespans, notes, logs, trackers, entries, contexts) is now stored as individual YAML files in a dedicated folder, replacing the previous single-file-per-type format
+- Added data migration (migration 6) that automatically converts existing monolithic YAML files into per-entity files on upgrade
+- Per-entity dirty tracking ensures only modified entities are written to disk on flush, improving write performance for large datasets
+- Hard-deleted entities (e.g., iCal events during re-sync, deleted contexts) now have their files physically removed from disk
+
+### Updated
+
+- Data directories use a `.gitkeep` file to ensure empty folders are preserved in git
+- Repository flush now resets the dirty flag after a successful write, preventing redundant rewrites in long-running sessions
+- Initialization creates entity directories with `.gitkeep` instead of empty YAML list files for new installations
+- The default context is now written as an individual file in the `contexts/` directory during first-run initialization
+
 ## Version 0.6.0-alpha
 
 ### New

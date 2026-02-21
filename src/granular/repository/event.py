@@ -23,6 +23,8 @@ class EventRepository:
     def __init__(self) -> None:
         self._events: Optional[list[Event]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def events(self) -> list[Event]:
@@ -33,24 +35,38 @@ class EventRepository:
         return self._events
 
     def __load_data(self) -> None:
-        events_data = load(configuration.DATA_EVENTS_PATH.read_text(), Loader=Loader)
-        raw_events = events_data["events"]
-        self._events = [
-            self.__convert_event_for_deserialization(event) for event in raw_events
-        ]
+        self._events = []
+        for file_path in configuration.DATA_EVENTS_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_event = load(file_path.read_text(), Loader=Loader)
+            if raw_event is not None:
+                self._events.append(self.__convert_event_for_deserialization(raw_event))
 
-    def __save_data(self, events: list[Event]) -> None:
-        serializable_events = [
-            self.__convert_event_for_serialization(event) for event in deepcopy(events)
-        ]
-        events_data = {
-            "events": serializable_events,
-        }
-        configuration.DATA_EVENTS_PATH.write_text(dump(events_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for event in self.events:
+            if event["id"] in self._dirty_ids:
+                serializable_event = self.__convert_event_for_serialization(
+                    deepcopy(event)
+                )
+                file_path = configuration.DATA_EVENTS_DIR / f"{event['id']}.yaml"
+                file_path.write_text(dump(serializable_event, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_EVENTS_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._events is not None and self.is_dirty:
-            self.__save_data(self._events)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -102,6 +118,7 @@ class EventRepository:
             event["tags"] = list(dict.fromkeys(event["tags"]))
 
         self.events.append(event)
+        self._dirty_ids.add(event["id"])
 
         # Update tag and project caches
         if event["tags"] is not None:
@@ -138,6 +155,7 @@ class EventRepository:
         remove_ical_uid: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         event = [event for event in self.events if event["id"] == id][0]
         # Set updated timestamp to current moment
@@ -240,6 +258,10 @@ class EventRepository:
         self.is_dirty = True
 
         initial_count = len(self.events)
+        # Track IDs being hard-deleted
+        for event in self.events:
+            if event["ical_source"] is not None:
+                self._deleted_ids.add(event["id"])
         self._events = [event for event in self.events if event["ical_source"] is None]
         deleted_count = initial_count - len(self.events)
 

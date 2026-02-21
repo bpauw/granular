@@ -1,6 +1,6 @@
 [project]
 name = "granular"
-version = "0.6.0-alpha"
+version = "0.7.0-alpha"
 description = "organizational management in the cli"
 readme = "README.md"
 requires-python = "~=3.14.0"

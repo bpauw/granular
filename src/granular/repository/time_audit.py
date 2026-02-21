@@ -23,6 +23,8 @@ class TimeAuditRepository:
     def __init__(self) -> None:
         self._time_audits: Optional[list[TimeAudit]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def time_audits(self) -> list[TimeAudit]:
@@ -33,30 +35,42 @@ class TimeAuditRepository:
         return self._time_audits
 
     def __load_data(self) -> None:
-        time_audits_data = load(
-            configuration.DATA_TIME_AUDIT_PATH.read_text(), Loader=Loader
-        )
-        raw_time_audits = time_audits_data["time_audits"]
-        self._time_audits = [
-            self.__convert_time_audit_for_deserialization(time_audit)
-            for time_audit in raw_time_audits
-        ]
+        self._time_audits = []
+        for file_path in configuration.DATA_TIME_AUDIT_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_time_audit = load(file_path.read_text(), Loader=Loader)
+            if raw_time_audit is not None:
+                self._time_audits.append(
+                    self.__convert_time_audit_for_deserialization(raw_time_audit)
+                )
 
-    def __save_data(self, time_audits: list[TimeAudit]) -> None:
-        serializable_time_audits = [
-            self.__convert_time_audit_for_serialization(time_audit)
-            for time_audit in deepcopy(time_audits)
-        ]
-        time_audits_data = {
-            "time_audits": serializable_time_audits,
-        }
-        configuration.DATA_TIME_AUDIT_PATH.write_text(
-            dump(time_audits_data, Dumper=Dumper)
-        )
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for time_audit in self.time_audits:
+            if time_audit["id"] in self._dirty_ids:
+                serializable_time_audit = self.__convert_time_audit_for_serialization(
+                    deepcopy(time_audit)
+                )
+                file_path = (
+                    configuration.DATA_TIME_AUDIT_DIR / f"{time_audit['id']}.yaml"
+                )
+                file_path.write_text(dump(serializable_time_audit, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_TIME_AUDIT_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._time_audits is not None and self.is_dirty:
-            self.__save_data(self._time_audits)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -112,6 +126,7 @@ class TimeAuditRepository:
             time_audit["tags"] = list(dict.fromkeys(time_audit["tags"]))
 
         self.time_audits.append(time_audit)
+        self._dirty_ids.add(time_audit["id"])
 
         # Update tag and project caches (additive only)
         if time_audit["tags"] is not None:
@@ -143,6 +158,7 @@ class TimeAuditRepository:
         remove_all_task_ids: bool = False,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         time_audit = [
             time_audit for time_audit in self.time_audits if time_audit["id"] == id

@@ -6,7 +6,7 @@ Life management in the terminal.
 
 > **Contributing** — Please note that this software is currently closed to anonymous outside code contributions.
 
-Granular is a CLI application for managing tasks, time tracking, events, timespans, notes, logs, and habit tracking — all from the terminal. Data is stored as plain YAML files on disk with optional git versioning for full change history.
+Granular is a CLI application for managing tasks, time tracking, events, timespans, notes, logs, and habit tracking — all from the terminal. Data is stored as plain YAML files on disk — each entity in its own file within a per-type folder — with optional git versioning for full change history.
 
 **Documentation:** https://granular.sh
 
@@ -60,6 +60,11 @@ Granular is a CLI application for managing tasks, time tracking, events, timespa
   - [Git Versioning](#git-versioning)
 - [Command Aliases](#command-aliases)
 - [Data Storage](#data-storage)
+  - [Directory Structure](#directory-structure)
+  - [Entity Directories](#entity-directories)
+  - [Singleton Files](#singleton-files)
+  - [How Storage Works](#how-storage-works)
+  - [Data Migrations](#data-migrations)
 - [Acknowledgements](#acknowledgements)
 
 ---
@@ -164,7 +169,7 @@ This means:
 
 ### Soft Deletion
 
-All delete operations are soft deletes — they set a `deleted` timestamp rather than removing data. Use `--include-deleted` / `-i` on view commands to see deleted entities. Undo a delete by modifying the entity with `--remove-deleted`.
+All delete operations are soft deletes — they set a `deleted` timestamp rather than removing data. The entity's YAML file remains on disk with the updated `deleted` field. Use `--include-deleted` / `-i` on view commands to see deleted entities. Undo a delete by modifying the entity with `--remove-deleted`.
 
 ---
 
@@ -687,6 +692,8 @@ Custom views let you compose multiple sub-views into a single named command. Def
 
 > **Migration note (v0.3.0):** If you are upgrading from a previous version that used `reports.yaml`, the file is automatically renamed to `custom-views.yaml` and the YAML key is updated to `custom_views` on first run. No manual action is required.
 
+> **Migration note (v0.7.0):** Entity data has been migrated from monolithic YAML files (e.g., `tasks.yaml`) to per-entity files in directories (e.g., `tasks/<uuid>.yaml`). Migration 6 automatically converts existing data on first run. No manual action is required. If you use git versioning, you will see a large changeset as the old files are replaced with the new directory structure.
+
 > **Migration note (v0.6.0):** The `task_id` field on time audits has been replaced with `task_ids` (a list). Migration 5 automatically converts existing data. Custom view column lists for time audit sub-views should use `task_ids` instead of `task_id`.
 
 > **Migration note (v0.5.0):** The `project` field on all entities has been replaced with `projects` (a list). Migration 4 automatically converts existing data. Any custom view filters using `filter_type: str` with `property: project` are automatically converted to the new `filter_type: project`. Custom view column lists should use `projects` instead of `project`.
@@ -1067,27 +1074,100 @@ gran s "query"               # gran search "query"
 
 All data is stored as plain YAML files on disk — no database is required. The default data directory is determined by [platformdirs](https://pypi.org/project/platformdirs/) and can be overridden with `gran config set --data-path`.
 
+### Directory Structure
+
+Entity data is stored using a **one-file-per-entity** pattern. Each of the 9 entity types has its own directory, and each entity is stored as an individual YAML file named by its UUID:
+
+```
+data/
+  tasks/
+    .gitkeep
+    550e8400-e29b-41d4-a716-446655440000.yaml
+    6ba7b810-9dad-11d1-80b4-00c04fd430c8.yaml
+  events/
+    .gitkeep
+    ...
+  time_audits/
+    .gitkeep
+    ...
+  timespans/
+    .gitkeep
+    ...
+  notes/
+    .gitkeep
+    ...
+  logs/
+    .gitkeep
+    ...
+  trackers/
+    .gitkeep
+    ...
+  entries/
+    .gitkeep
+    ...
+  contexts/
+    .gitkeep
+    ...
+  tags.yaml
+  projects.yaml
+  custom-views.yaml
+  id_map.yaml
+  migrate.yaml
+```
+
+Each entity file contains the bare entity dict (no wrapper key):
+
+```yaml
+# tasks/550e8400-e29b-41d4-a716-446655440000.yaml
+id: 550e8400-e29b-41d4-a716-446655440000
+entity_type: task
+description: My task
+projects:
+- project-a
+tags:
+- tag-1
+priority: 3
+created: '2026-01-15T10:30:00+00:00'
+updated: '2026-01-15T10:30:00+00:00'
+completed: null
+deleted: null
+```
+
+### Entity Directories
+
+| Directory | Contents |
+|---|---|
+| `tasks/` | One YAML file per task |
+| `time_audits/` | One YAML file per time audit |
+| `events/` | One YAML file per event |
+| `timespans/` | One YAML file per timespan |
+| `notes/` | One YAML file per note (metadata only; external notes store text in `.md` files elsewhere) |
+| `logs/` | One YAML file per log |
+| `trackers/` | One YAML file per tracker |
+| `entries/` | One YAML file per tracker entry |
+| `contexts/` | One YAML file per context |
+
+Each directory contains a `.gitkeep` file so that empty directories are preserved in git.
+
+### Singleton Files
+
 | File | Contents |
 |---|---|
-| `tasks.yaml` | All tasks |
-| `time_audits.yaml` | All time audits |
-| `events.yaml` | All events |
-| `timespans.yaml` | All timespans |
-| `notes.yaml` | All notes |
-| `logs.yaml` | All logs |
-| `trackers.yaml` | All trackers |
-| `entries.yaml` | All tracker entries |
-| `contexts.yaml` | All contexts |
 | `tags.yaml` | Tag index |
 | `projects.yaml` | Project index |
 | `custom-views.yaml` | Custom view definitions |
 | `id_map.yaml` | Synthetic-to-real ID mapping (session-specific) |
 | `migrate.yaml` | Migration version state |
+| `dispatch.yaml` | Cached dispatch data (session-specific) |
 | `id_migration_map.yaml` | Old integer-to-UUID mapping (generated once by migration 3, kept for reference) |
+
+### How Storage Works
 
 Entity data files store each entity's `id` as a UUID v4 string. Cross-entity references (e.g., a time audit's `task_ids` list, a note's `reference_id`) are also stored as UUID strings. The synthetic ID map (`id_map.yaml`) maps short integer IDs to these UUIDs for display and user input.
 
-Data files use lazy loading and in-memory caching for performance, flushed to disk on exit.
+Data is lazy-loaded and cached in memory for performance. On flush (at process exit), only entities that were actually modified are written back to disk — Granular tracks per-entity dirty state to avoid rewriting unchanged files. This means a single edit to one task only rewrites that task's file, not the entire collection.
+
+Soft-deleted entities (those with a `deleted` timestamp) remain as files on disk. Hard-deleted entities (such as iCal events removed during re-sync) have their files physically removed.
 
 ### Data Migrations
 
@@ -1102,6 +1182,7 @@ Current migrations:
 | 3 | Convert all entity IDs from integers to UUID v4 strings |
 | 4 | Convert singular `project` field to plural `projects` list across all entities, contexts, and custom view filters |
 | 5 | Convert singular `task_id` field to plural `task_ids` list on all time audits |
+| 6 | Convert monolithic YAML files to per-entity files in directories for all 9 entity types |
 
 ### Global Options
 

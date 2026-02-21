@@ -21,6 +21,8 @@ class ContextRepository:
     def __init__(self) -> None:
         self._contexts: Optional[list[Context]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def contexts(self) -> list[Context]:
@@ -31,24 +33,40 @@ class ContextRepository:
         return self._contexts
 
     def __load_data(self) -> None:
-        contexts_data = load(configuration.DATA_CONTEXT_PATH.read_text(), Loader=Loader)
-        raw_contexts = contexts_data["contexts"]
-        self._contexts = [
-            self.__convert_context_for_deserialization(context)
-            for context in raw_contexts
-        ]
+        self._contexts = []
+        for file_path in configuration.DATA_CONTEXT_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_context = load(file_path.read_text(), Loader=Loader)
+            if raw_context is not None:
+                self._contexts.append(
+                    self.__convert_context_for_deserialization(raw_context)
+                )
 
-    def __save_data(self, contexts: list[Context]) -> None:
-        serializable_contexts = [
-            self.__convert_context_for_serialization(context)
-            for context in deepcopy(contexts)
-        ]
-        contexts_data = {"contexts": serializable_contexts}
-        configuration.DATA_CONTEXT_PATH.write_text(dump(contexts_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for context in self.contexts:
+            if context["id"] in self._dirty_ids:
+                serializable_context = self.__convert_context_for_serialization(
+                    deepcopy(context)
+                )
+                file_path = configuration.DATA_CONTEXT_DIR / f"{context['id']}.yaml"
+                file_path.write_text(dump(serializable_context, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_CONTEXT_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> None:
         if self._contexts is not None and self.is_dirty:
-            self.__save_data(self._contexts)
+            self.__save_data()
+            self.is_dirty = False
 
     def __convert_context_for_serialization(self, context: Context) -> dict[str, Any]:
         serializable_context = cast(dict[str, Any], context)
@@ -88,6 +106,7 @@ class ContextRepository:
 
         context["id"] = generate_entity_id()
         self.contexts.append(context)
+        self._dirty_ids.add(context["id"])
         return context["id"]
 
     def modify_context(
@@ -105,6 +124,7 @@ class ContextRepository:
         remove_default_note_folder: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         context = [context for context in self.contexts if context["id"] == id][0]
         # Set updated timestamp to current moment
@@ -151,6 +171,7 @@ class ContextRepository:
 
     def delete_context(self, id: EntityId) -> None:
         self.is_dirty = True
+        self._deleted_ids.add(id)
         self._contexts = [context for context in self.contexts if context["id"] != id]
 
     def get_context(self, id: EntityId) -> Context:

@@ -60,42 +60,17 @@ def __ensure_config_files() -> None:
 
 
 def __ensure_data_files() -> None:
+    # Single-file data stores (not converted to directories)
     if not configuration.DATA_MIGRATE_PATH.is_file():
         configuration.DATA_MIGRATE_PATH.touch()
         migrate: dict[str, Any] = {"version": 0}
         configuration.DATA_MIGRATE_PATH.write_text(dump(migrate, Dumper=Dumper))
-    if not configuration.DATA_TASKS_PATH.is_file():
-        configuration.DATA_TASKS_PATH.touch()
-        tasks: dict[str, Any] = {"tasks": []}
-        configuration.DATA_TASKS_PATH.write_text(dump(tasks, Dumper=Dumper))
-    if not configuration.DATA_TIME_AUDIT_PATH.is_file():
-        configuration.DATA_TIME_AUDIT_PATH.touch()
-        time_audits: dict[str, Any] = {"time_audits": []}
-        configuration.DATA_TIME_AUDIT_PATH.write_text(dump(time_audits, Dumper=Dumper))
-    if not configuration.DATA_EVENTS_PATH.is_file():
-        configuration.DATA_EVENTS_PATH.touch()
-        events: dict[str, Any] = {"events": []}
-        configuration.DATA_EVENTS_PATH.write_text(dump(events, Dumper=Dumper))
     if not configuration.DATA_CUSTOM_VIEWS_PATH.is_file():
         configuration.DATA_CUSTOM_VIEWS_PATH.touch()
         custom_views: dict[str, Any] = {"custom_views": []}
         configuration.DATA_CUSTOM_VIEWS_PATH.write_text(
             dump(custom_views, Dumper=Dumper)
         )
-    if not configuration.DATA_CONTEXT_PATH.is_file():
-        configuration.DATA_CONTEXT_PATH.touch()
-        contexts: dict[str, Any] = {
-            "contexts": [
-                {
-                    "id": generate_entity_id(),
-                    "name": "default",
-                    "active": True,
-                    "auto_added_tags": None,
-                    "filter": None,
-                }
-            ],
-        }
-        configuration.DATA_CONTEXT_PATH.write_text(dump(contexts, Dumper=Dumper))
     if not configuration.DATA_TAGS_PATH.is_file():
         configuration.DATA_TAGS_PATH.touch()
         tags: dict[str, Any] = {"tags": []}
@@ -104,30 +79,51 @@ def __ensure_data_files() -> None:
         configuration.DATA_PROJECTS_PATH.touch()
         projects: dict[str, Any] = {"projects": []}
         configuration.DATA_PROJECTS_PATH.write_text(dump(projects, Dumper=Dumper))
-    if not configuration.DATA_TIMESPANS_PATH.is_file():
-        configuration.DATA_TIMESPANS_PATH.touch()
-        timespans: dict[str, Any] = {"timespans": []}
-        configuration.DATA_TIMESPANS_PATH.write_text(dump(timespans, Dumper=Dumper))
-    if not configuration.DATA_NOTES_PATH.is_file():
-        configuration.DATA_NOTES_PATH.touch()
-        notes: dict[str, Any] = {"notes": []}
-        configuration.DATA_NOTES_PATH.write_text(dump(notes, Dumper=Dumper))
-    if not configuration.DATA_LOGS_PATH.is_file():
-        configuration.DATA_LOGS_PATH.touch()
-        logs: dict[str, Any] = {"logs": []}
-        configuration.DATA_LOGS_PATH.write_text(dump(logs, Dumper=Dumper))
     if not configuration.DATA_ID_MAP_PATH.is_file():
         configuration.DATA_ID_MAP_PATH.touch()
         id_map: IdMap = get_id_map_template()
         configuration.DATA_ID_MAP_PATH.write_text(dump(id_map, Dumper=Dumper))
-    if not configuration.DATA_TRACKERS_PATH.is_file():
-        configuration.DATA_TRACKERS_PATH.touch()
-        trackers: dict[str, Any] = {"trackers": []}
-        configuration.DATA_TRACKERS_PATH.write_text(dump(trackers, Dumper=Dumper))
-    if not configuration.DATA_ENTRIES_PATH.is_file():
-        configuration.DATA_ENTRIES_PATH.touch()
-        entries: dict[str, Any] = {"entries": []}
-        configuration.DATA_ENTRIES_PATH.write_text(dump(entries, Dumper=Dumper))
+
+    # Directory-based entity stores (one file per entity)
+    if not configuration.DATA_TASKS_DIR.is_dir():
+        configuration.DATA_TASKS_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_TASKS_DIR / ".gitkeep").touch()
+    if not configuration.DATA_TIME_AUDIT_DIR.is_dir():
+        configuration.DATA_TIME_AUDIT_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_TIME_AUDIT_DIR / ".gitkeep").touch()
+    if not configuration.DATA_EVENTS_DIR.is_dir():
+        configuration.DATA_EVENTS_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_EVENTS_DIR / ".gitkeep").touch()
+    if not configuration.DATA_TIMESPANS_DIR.is_dir():
+        configuration.DATA_TIMESPANS_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_TIMESPANS_DIR / ".gitkeep").touch()
+    if not configuration.DATA_NOTES_DIR.is_dir():
+        configuration.DATA_NOTES_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_NOTES_DIR / ".gitkeep").touch()
+    if not configuration.DATA_LOGS_DIR.is_dir():
+        configuration.DATA_LOGS_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_LOGS_DIR / ".gitkeep").touch()
+    if not configuration.DATA_TRACKERS_DIR.is_dir():
+        configuration.DATA_TRACKERS_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_TRACKERS_DIR / ".gitkeep").touch()
+    if not configuration.DATA_ENTRIES_DIR.is_dir():
+        configuration.DATA_ENTRIES_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_ENTRIES_DIR / ".gitkeep").touch()
+
+    # Contexts directory with default context
+    if not configuration.DATA_CONTEXT_DIR.is_dir():
+        configuration.DATA_CONTEXT_DIR.mkdir(parents=True, exist_ok=True)
+        (configuration.DATA_CONTEXT_DIR / ".gitkeep").touch()
+        default_context_id = generate_entity_id()
+        default_context: dict[str, Any] = {
+            "id": default_context_id,
+            "name": "default",
+            "active": True,
+            "auto_added_tags": None,
+            "filter": None,
+        }
+        context_file = configuration.DATA_CONTEXT_DIR / f"{default_context_id}.yaml"
+        context_file.write_text(dump(default_context, Dumper=Dumper))
 
 
 def __ensure_migrations() -> None:

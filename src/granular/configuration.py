@@ -34,6 +34,17 @@ DATA_TRACKERS_PATH: Path = DATA_PATH / "trackers.yaml"
 DATA_ENTRIES_PATH: Path = DATA_PATH / "entries.yaml"
 DATA_DISPATCH_PATH: Path = DATA_PATH / "dispatch.yaml"
 
+# Directory paths for entity types stored as individual files per entity
+DATA_TASKS_DIR: Path = DATA_PATH / "tasks"
+DATA_EVENTS_DIR: Path = DATA_PATH / "events"
+DATA_TIME_AUDIT_DIR: Path = DATA_PATH / "time_audits"
+DATA_TIMESPANS_DIR: Path = DATA_PATH / "timespans"
+DATA_NOTES_DIR: Path = DATA_PATH / "notes"
+DATA_LOGS_DIR: Path = DATA_PATH / "logs"
+DATA_TRACKERS_DIR: Path = DATA_PATH / "trackers"
+DATA_ENTRIES_DIR: Path = DATA_PATH / "entries"
+DATA_CONTEXT_DIR: Path = DATA_PATH / "contexts"
+
 
 class NoteFolderConfig(TypedDict):
     name: str
@@ -83,7 +94,16 @@ def load_data_path_configuration() -> None:
         DATA_ID_MAP_PATH, \
         DATA_TRACKERS_PATH, \
         DATA_ENTRIES_PATH, \
-        DATA_DISPATCH_PATH
+        DATA_DISPATCH_PATH, \
+        DATA_TASKS_DIR, \
+        DATA_EVENTS_DIR, \
+        DATA_TIME_AUDIT_DIR, \
+        DATA_TIMESPANS_DIR, \
+        DATA_NOTES_DIR, \
+        DATA_LOGS_DIR, \
+        DATA_TRACKERS_DIR, \
+        DATA_ENTRIES_DIR, \
+        DATA_CONTEXT_DIR
 
     if not APP_CONFIG_PATH.is_file():
         # Config doesn't exist yet, use defaults
@@ -112,3 +132,14 @@ def load_data_path_configuration() -> None:
         DATA_TRACKERS_PATH = DATA_PATH / "trackers.yaml"
         DATA_ENTRIES_PATH = DATA_PATH / "entries.yaml"
         DATA_DISPATCH_PATH = DATA_PATH / "dispatch.yaml"
+
+        # Update directory paths for entity types
+        DATA_TASKS_DIR = DATA_PATH / "tasks"
+        DATA_EVENTS_DIR = DATA_PATH / "events"
+        DATA_TIME_AUDIT_DIR = DATA_PATH / "time_audits"
+        DATA_TIMESPANS_DIR = DATA_PATH / "timespans"
+        DATA_NOTES_DIR = DATA_PATH / "notes"
+        DATA_LOGS_DIR = DATA_PATH / "logs"
+        DATA_TRACKERS_DIR = DATA_PATH / "trackers"
+        DATA_ENTRIES_DIR = DATA_PATH / "entries"
+        DATA_CONTEXT_DIR = DATA_PATH / "contexts"

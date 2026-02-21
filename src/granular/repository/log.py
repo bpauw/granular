@@ -23,6 +23,8 @@ class LogRepository:
     def __init__(self) -> None:
         self._logs: Optional[list[Log]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def logs(self) -> list[Log]:
@@ -33,20 +35,36 @@ class LogRepository:
         return self._logs
 
     def __load_data(self) -> None:
-        logs_data = load(configuration.DATA_LOGS_PATH.read_text(), Loader=Loader)
-        raw_logs = logs_data["logs"]
-        self._logs = [self.__convert_log_for_deserialization(log) for log in raw_logs]
+        self._logs = []
+        for file_path in configuration.DATA_LOGS_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_log = load(file_path.read_text(), Loader=Loader)
+            if raw_log is not None:
+                self._logs.append(self.__convert_log_for_deserialization(raw_log))
 
-    def __save_data(self, logs: list[Log]) -> None:
-        serializable_logs = [
-            self.__convert_log_for_serialization(log) for log in deepcopy(logs)
-        ]
-        logs_data = {"logs": serializable_logs}
-        configuration.DATA_LOGS_PATH.write_text(dump(logs_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for log in self.logs:
+            if log["id"] in self._dirty_ids:
+                serializable_log = self.__convert_log_for_serialization(deepcopy(log))
+                file_path = configuration.DATA_LOGS_DIR / f"{log['id']}.yaml"
+                file_path.write_text(dump(serializable_log, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_LOGS_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._logs is not None and self.is_dirty:
-            self.__save_data(self._logs)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -92,6 +110,7 @@ class LogRepository:
             log["tags"] = list(dict.fromkeys(log["tags"]))
 
         self.logs.append(log)
+        self._dirty_ids.add(log["id"])
 
         # Update tag and project caches (additive only)
         if log["tags"] is not None:
@@ -122,6 +141,7 @@ class LogRepository:
         remove_deleted: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         log = [log for log in self.logs if log["id"] == id][0]
         # Set updated timestamp to current moment

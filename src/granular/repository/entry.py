@@ -23,6 +23,8 @@ class EntryRepository:
     def __init__(self) -> None:
         self._entries: Optional[list[Entry]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def entries(self) -> list[Entry]:
@@ -33,22 +35,40 @@ class EntryRepository:
         return self._entries
 
     def __load_data(self) -> None:
-        entries_data = load(configuration.DATA_ENTRIES_PATH.read_text(), Loader=Loader)
-        raw_entries = entries_data["entries"]
-        self._entries = [
-            self.__convert_entry_for_deserialization(entry) for entry in raw_entries
-        ]
+        self._entries = []
+        for file_path in configuration.DATA_ENTRIES_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_entry = load(file_path.read_text(), Loader=Loader)
+            if raw_entry is not None:
+                self._entries.append(
+                    self.__convert_entry_for_deserialization(raw_entry)
+                )
 
-    def __save_data(self, entries: list[Entry]) -> None:
-        serializable_entries = [
-            self.__convert_entry_for_serialization(entry) for entry in deepcopy(entries)
-        ]
-        entries_data = {"entries": serializable_entries}
-        configuration.DATA_ENTRIES_PATH.write_text(dump(entries_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for entry in self.entries:
+            if entry["id"] in self._dirty_ids:
+                serializable_entry = self.__convert_entry_for_serialization(
+                    deepcopy(entry)
+                )
+                file_path = configuration.DATA_ENTRIES_DIR / f"{entry['id']}.yaml"
+                file_path.write_text(dump(serializable_entry, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_ENTRIES_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._entries is not None and self.is_dirty:
-            self.__save_data(self._entries)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -94,6 +114,7 @@ class EntryRepository:
             entry["tags"] = list(dict.fromkeys(entry["tags"]))
 
         self.entries.append(entry)
+        self._dirty_ids.add(entry["id"])
 
         # Update tag and project caches (additive only)
         if entry["tags"] is not None:
@@ -120,6 +141,7 @@ class EntryRepository:
         remove_deleted: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         entry = [entry for entry in self.entries if entry["id"] == id][0]
         # Set updated timestamp to current moment

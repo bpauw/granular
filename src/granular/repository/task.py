@@ -23,6 +23,8 @@ class TaskRepository:
     def __init__(self) -> None:
         self._tasks: Optional[list[Task]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def tasks(self) -> list[Task]:
@@ -33,22 +35,38 @@ class TaskRepository:
         return self._tasks
 
     def __load_data(self) -> None:
-        tasks_data = load(configuration.DATA_TASKS_PATH.read_text(), Loader=Loader)
-        raw_tasks = tasks_data["tasks"]
-        self._tasks = [
-            self.__convert_task_for_deserialization(task) for task in raw_tasks
-        ]
+        self._tasks = []
+        for file_path in configuration.DATA_TASKS_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_task = load(file_path.read_text(), Loader=Loader)
+            if raw_task is not None:
+                self._tasks.append(self.__convert_task_for_deserialization(raw_task))
 
-    def __save_data(self, tasks: list[Task]) -> None:
-        serializable_tasks = [
-            self.__convert_task_for_serialization(task) for task in deepcopy(tasks)
-        ]
-        tasks_data = {"tasks": serializable_tasks}
-        configuration.DATA_TASKS_PATH.write_text(dump(tasks_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for task in self.tasks:
+            if task["id"] in self._dirty_ids:
+                serializable_task = self.__convert_task_for_serialization(
+                    deepcopy(task)
+                )
+                file_path = configuration.DATA_TASKS_DIR / f"{task['id']}.yaml"
+                file_path.write_text(dump(serializable_task, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_TASKS_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._tasks is not None and self.is_dirty:
-            self.__save_data(self._tasks)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -130,6 +148,7 @@ class TaskRepository:
             task["tags"] = list(dict.fromkeys(task["tags"]))
 
         self.tasks.append(task)
+        self._dirty_ids.add(task["id"])
 
         # Update tag and project caches
         if task["tags"] is not None:
@@ -174,6 +193,7 @@ class TaskRepository:
         remove_deleted: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         task = [task for task in self.tasks if task["id"] == id][0]
         # Set updated timestamp to current moment

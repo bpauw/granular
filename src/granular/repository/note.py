@@ -62,6 +62,8 @@ class NoteRepository:
     def __init__(self) -> None:
         self._notes: Optional[list[Note]] = None
         self.is_dirty = False
+        self._dirty_ids: set[str] = set()
+        self._deleted_ids: set[str] = set()
 
     @property
     def notes(self) -> list[Note]:
@@ -72,22 +74,38 @@ class NoteRepository:
         return self._notes
 
     def __load_data(self) -> None:
-        notes_data = load(configuration.DATA_NOTES_PATH.read_text(), Loader=Loader)
-        raw_notes = notes_data["notes"]
-        self._notes = [
-            self.__convert_note_for_deserialization(note) for note in raw_notes
-        ]
+        self._notes = []
+        for file_path in configuration.DATA_NOTES_DIR.iterdir():
+            if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+                continue
+            raw_note = load(file_path.read_text(), Loader=Loader)
+            if raw_note is not None:
+                self._notes.append(self.__convert_note_for_deserialization(raw_note))
 
-    def __save_data(self, notes: list[Note]) -> None:
-        serializable_notes = [
-            self.__convert_note_for_serialization(note) for note in deepcopy(notes)
-        ]
-        notes_data = {"notes": serializable_notes}
-        configuration.DATA_NOTES_PATH.write_text(dump(notes_data, Dumper=Dumper))
+    def __save_data(self) -> None:
+        # Write dirty entities
+        for note in self.notes:
+            if note["id"] in self._dirty_ids:
+                serializable_note = self.__convert_note_for_serialization(
+                    deepcopy(note)
+                )
+                file_path = configuration.DATA_NOTES_DIR / f"{note['id']}.yaml"
+                file_path.write_text(dump(serializable_note, Dumper=Dumper))
+
+        # Remove hard-deleted entity files
+        for entity_id in self._deleted_ids:
+            file_path = configuration.DATA_NOTES_DIR / f"{entity_id}.yaml"
+            if file_path.exists():
+                file_path.unlink()
+
+        # Clear tracking sets
+        self._dirty_ids.clear()
+        self._deleted_ids.clear()
 
     def flush(self) -> bool:
         if self._notes is not None and self.is_dirty:
-            self.__save_data(self._notes)
+            self.__save_data()
+            self.is_dirty = False
             return True
         return False
 
@@ -474,6 +492,7 @@ class NoteRepository:
             note["text"] = None
 
         self.notes.append(note)
+        self._dirty_ids.add(note["id"])
 
         # Update tag and project caches (additive only)
         if note["tags"] is not None:
@@ -504,6 +523,7 @@ class NoteRepository:
         remove_color: bool,
     ) -> None:
         self.is_dirty = True
+        self._dirty_ids.add(id)
 
         note = [note for note in self.notes if note["id"] == id][0]
 
