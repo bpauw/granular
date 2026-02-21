@@ -10,7 +10,7 @@ try:
 except ImportError:
     from yaml import Dumper  # type: ignore[assignment]
 
-from granular import configuration
+from granular import configuration, time
 from granular import state as app_state
 from granular.migrate import migrate
 from granular.model.entity_id import generate_entity_id
@@ -115,12 +115,15 @@ def __ensure_data_files() -> None:
         configuration.DATA_CONTEXT_DIR.mkdir(parents=True, exist_ok=True)
         (configuration.DATA_CONTEXT_DIR / ".gitkeep").touch()
         default_context_id = generate_entity_id()
+        now = time.datetime_to_iso_str(time.now_utc())
         default_context: dict[str, Any] = {
             "id": default_context_id,
             "name": "default",
             "active": True,
             "auto_added_tags": None,
             "filter": None,
+            "created": now,
+            "updated": now,
         }
         context_file = configuration.DATA_CONTEXT_DIR / f"{default_context_id}.yaml"
         context_file.write_text(dump(default_context, Dumper=Dumper))

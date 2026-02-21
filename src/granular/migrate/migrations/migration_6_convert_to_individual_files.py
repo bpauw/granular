@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import pendulum
 from yaml import dump, load
 
 try:
@@ -37,6 +38,8 @@ def migrate() -> None:
 
     for entity_type, old_path_attr, yaml_key, new_dir_attr in ENTITY_CONVERSIONS:
         _convert_entity_type(entity_type, old_path_attr, yaml_key, new_dir_attr)
+
+    _backfill_context_timestamps()
 
     print("migration 6 complete!")
 
@@ -91,3 +94,38 @@ def _convert_entity_type(
     old_file_path.unlink()
 
     print(f"  {entity_type}: converted {len(entities)} entities to individual files")
+
+
+def _backfill_context_timestamps() -> None:
+    """Ensure all context files have 'created' and 'updated' fields."""
+    context_dir = _get_path("DATA_CONTEXT_DIR")
+    if not context_dir.is_dir():
+        return
+
+    now_iso = pendulum.now("UTC").isoformat()
+    backfilled = 0
+
+    for file_path in context_dir.iterdir():
+        if file_path.suffix != ".yaml" or file_path.name == ".gitkeep":
+            continue
+
+        context = load(file_path.read_text(), Loader=Loader)
+        if context is None:
+            continue
+
+        modified = False
+        if "created" not in context or context["created"] is None:
+            context["created"] = now_iso
+            modified = True
+        if "updated" not in context or context["updated"] is None:
+            context["updated"] = now_iso
+            modified = True
+
+        if modified:
+            file_path.write_text(dump(context, Dumper=Dumper))
+            backfilled += 1
+
+    if backfilled > 0:
+        print(
+            f"  contexts: backfilled created/updated timestamps on {backfilled} entities"
+        )
